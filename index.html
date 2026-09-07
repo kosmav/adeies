@@ -622,7 +622,11 @@ var SCOPES=["https://graph.microsoft.com/Sites.Manage.All"];
 /* ── Graph ── */
 async function token(){
   try{ var r=await APP.acquireTokenSilent({scopes:SCOPES,account:account}); return r.accessToken; }
-  catch(e){ var r2=await APP.acquireTokenPopup({scopes:SCOPES,account:account}); return r2.accessToken; }
+  catch(e){
+    /* χωρίς popup — ανακατεύθυνση, ώστε να μη μπλοκάρεται από τον browser */
+    await APP.acquireTokenRedirect({scopes:SCOPES,account:account});
+    throw new Error("Γίνεται ανακατεύθυνση για ανανέωση της σύνδεσης…");
+  }
 }
 async function graph(path,opts){
   opts=opts||{};
@@ -764,7 +768,8 @@ async function boot(){
     var accs=APP.getAllAccounts();
     if(resp&&resp.account) account=resp.account;
     else if(accs.length) account=accs[0];
-    else account=(await APP.loginPopup({scopes:SCOPES})).account;
+    else { setStage("Ανακατεύθυνση στη σελίδα σύνδεσης της Microsoft…");
+           await APP.loginRedirect({scopes:SCOPES}); return; }
     APP.setActiveAccount(account);
 
     setStage("Άνοιγμα του χώρου SharePoint…");   await resolveSite();
@@ -1134,7 +1139,6 @@ $("#bExport").addEventListener("click",function(){
 });
 
 
-/* ── σύνδεση / ξεχάσιμο ── */
 $("#bConnect").addEventListener("click",function(){
   var site=$("#cSite").value.trim().replace(/\/+$/,"");
   var tenant=$("#cTenant").value.trim(), client=$("#cClient").value.trim();
