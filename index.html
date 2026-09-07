@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Άδειες Προσωπικού</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;600;700&family=Fira+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fira+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --paper:#FBFAF7; --surface:#FFFFFF; --surface-2:#F4F3EE;
+  --ink:#1B2420; --ink-2:#3C453F; --muted:#6E7670;
+  --line:#DEE1DA; --line-strong:#C4C9BF;
+  --accent:#2F6B4F; --accent-soft:#E4EDE7; --accent-ink:#215139;
+  --warn:#8A6410; --warn-soft:#F6EEDA;
+  --bad:#A33A2E; --bad-soft:#F7E6E3;
+  --ok:#2F6B4F; --ok-soft:#E4EDE7;
+  --shadow:0 1px 2px rgba(27,36,32,.06), 0 8px 24px -16px rgba(27,36,32,.28);
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121815; --surface:#1A211D; --surface-2:#222A25;
+    --ink:#E9ECE6; --ink-2:#C3CABF; --muted:#8B948A;
+    --line:#2C352F; --line-strong:#3D473F;
+    --accent:#6FB08D; --accent-soft:#1E2E26; --accent-ink:#8FC7A7;
+    --warn:#D6A742; --warn-soft:#2C2618;
+    --bad:#D9776A; --bad-soft:#2E1D1A;
+    --ok:#6FB08D; --ok-soft:#1E2E26;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121815; --surface:#1A211D; --surface-2:#222A25;
+  --ink:#E9ECE6; --ink-2:#C3CABF; --muted:#8B948A;
+  --line:#2C352F; --line-strong:#3D473F;
+  --accent:#6FB08D; --accent-soft:#1E2E26; --accent-ink:#8FC7A7;
+  --warn:#D6A742; --warn-soft:#2C2618;
+  --bad:#D9776A; --bad-soft:#2E1D1A;
+  --ok:#6FB08D; --ok-soft:#1E2E26;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Fira Sans","Helvetica Neue",Arial,sans-serif;
+  font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:"Roboto Slab",Georgia,serif; text-wrap:balance; margin:0}
+button,input,select,textarea{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+
+/* ---------- shell ---------- */
+.top{
+  position:sticky; top:0; z-index:20; background:var(--surface);
+  border-bottom:1px solid var(--line);
+}
+.top-in{max-width:1180px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; gap:20px; flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:11px; margin-right:auto}
+.mark{width:30px;height:30px;flex:none}
+.brand-txt strong{display:block; font-family:"Roboto Slab",Georgia,serif; font-size:17px; font-weight:600; letter-spacing:-.01em}
+.brand-txt span{display:block; font-size:11.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase}
+
+.role{display:flex; align-items:center; gap:9px}
+.role label{font-size:11.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted)}
+select.ctl,input.ctl,textarea.ctl{
+  background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--r);
+  padding:7px 10px; min-width:0;
+}
+select.ctl:hover{border-color:var(--accent)}
+
+nav.tabs{max-width:1180px; margin:0 auto; padding:0 24px; display:flex; gap:2px; overflow-x:auto}
+nav.tabs button{
+  background:none; border:0; border-bottom:2px solid transparent; cursor:pointer;
+  padding:10px 14px; color:var(--muted); font-weight:500; white-space:nowrap;
+}
+nav.tabs button:hover{color:var(--ink)}
+nav.tabs button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
+nav.tabs .count{
+  font-family:"Fira Mono",monospace; font-size:11px; margin-left:6px;
+  background:var(--warn-soft); color:var(--warn); padding:1px 5px; border-radius:9px;
+}
+
+main{max-width:1180px; margin:0 auto; padding:26px 24px 80px}
+.panel{display:none}
+.panel.on{display:block}
+
+.head{display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:18px}
+.head h2{font-size:22px; font-weight:600; letter-spacing:-.015em}
+.head p{margin:4px 0 0; color:var(--muted); font-size:13.5px}
+.head .sp{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap}
+
+/* ---------- buttons ---------- */
+.btn{
+  background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--r);
+  padding:8px 14px; cursor:pointer; font-weight:500; transition:border-color .12s, background .12s;
+}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.pri:hover{background:var(--accent-ink); border-color:var(--accent-ink)}
+.btn.ok{color:var(--ok); border-color:var(--ok)}
+.btn.ok:hover{background:var(--ok-soft)}
+.btn.bad{color:var(--bad); border-color:var(--bad)}
+.btn.bad:hover{background:var(--bad-soft)}
+.btn.sm{padding:5px 10px; font-size:13px}
+.btn:disabled{opacity:.4; cursor:not-allowed}
+
+/* ---------- filter chips ---------- */
+.chips{display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px}
+.chip{
+  background:var(--surface); border:1px solid var(--line); border-radius:100px;
+  padding:5px 13px; font-size:13.5px; cursor:pointer; color:var(--ink-2);
+}
+.chip[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+.chip b{font-family:"Fira Mono",monospace; font-weight:500; opacity:.65; margin-left:5px}
+
+/* ---------- request list ---------- */
+.list{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); overflow:hidden}
+.row{
+  display:grid; grid-template-columns:118px minmax(160px,1.4fr) 130px 190px 62px 168px auto;
+  gap:14px; align-items:center; padding:13px 16px; border-bottom:1px solid var(--line);
+  border-left:3px solid transparent;
+}
+.row:last-child{border-bottom:0}
+.row.s-sup{border-left-color:var(--warn)}
+.row.s-md{border-left-color:var(--warn)}
+.row.s-ok{border-left-color:var(--ok)}
+.row.s-no{border-left-color:var(--bad)}
+.row:hover{background:var(--surface-2)}
+.proto{font-family:"Fira Mono",monospace; font-size:12.5px; color:var(--muted)}
+.who{font-weight:600; letter-spacing:-.005em}
+.who small{display:block; font-weight:400; font-size:12px; color:var(--muted); letter-spacing:.02em}
+.kind{font-size:13px; color:var(--ink-2)}
+.dates{font-family:"Fira Mono",monospace; font-size:12.5px; color:var(--ink-2); font-variant-numeric:tabular-nums}
+.days{font-family:"Fira Mono",monospace; font-size:15px; font-weight:500; text-align:right; font-variant-numeric:tabular-nums}
+.days small{display:block; font-family:"Fira Sans",sans-serif; font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; font-weight:400}
+.acts{display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap}
+
+.status{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:500; padding:3px 9px; border-radius:100px; white-space:nowrap}
+.status::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor; flex:none}
+.st-sup,.st-md{background:var(--warn-soft); color:var(--warn)}
+.st-ok{background:var(--ok-soft); color:var(--ok)}
+.st-no{background:var(--bad-soft); color:var(--bad)}
+
+.empty{padding:44px 20px; text-align:center; color:var(--muted)}
+.empty h3{font-size:16px; font-weight:600; color:var(--ink-2); margin-bottom:5px}
+
+/* ---------- tables ---------- */
+.tblwrap{overflow-x:auto; background:var(--surface); border:1px solid var(--line); border-radius:var(--r)}
+table{border-collapse:collapse; width:100%; min-width:640px}
+th{
+  text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+  font-weight:600; padding:11px 14px; border-bottom:1px solid var(--line); white-space:nowrap;
+}
+td{padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.num{font-family:"Fira Mono",monospace; font-variant-numeric:tabular-nums; text-align:right}
+.bar{height:5px; background:var(--surface-2); border-radius:3px; overflow:hidden; min-width:80px; margin-top:5px}
+.bar i{display:block; height:100%; background:var(--accent)}
+.bar i.low{background:var(--bad)}
+
+/* ---------- log ---------- */
+.log{border-left:2px solid var(--line); margin-left:9px; padding-left:20px; display:flex; flex-direction:column; gap:16px}
+.ev{position:relative}
+.ev::before{
+  content:""; position:absolute; left:-26px; top:6px; width:9px; height:9px; border-radius:50%;
+  background:var(--surface); border:2px solid var(--line-strong);
+}
+.ev.a-ok::before{border-color:var(--ok); background:var(--ok)}
+.ev.a-no::before{border-color:var(--bad); background:var(--bad)}
+.ev time{font-family:"Fira Mono",monospace; font-size:11.5px; color:var(--muted); display:block}
+.ev p{margin:2px 0 0}
+.ev p b{font-weight:600}
+.ev p em{font-style:normal; color:var(--muted)}
+
+/* ---------- forms ---------- */
+.grid{display:grid; gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:640px){.g2,.g3{grid-template-columns:1fr}}
+.f{display:flex; flex-direction:column; gap:5px}
+.f label{font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:500}
+.f input,.f select,.f textarea{
+  background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--r);
+  padding:8px 10px; width:100%;
+}
+.f textarea{resize:vertical; min-height:64px}
+.f .hint{font-size:12px; color:var(--muted)}
+.box{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px}
+.box h3{font-size:15px; font-weight:600; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--line)}
+
+/* ---------- modal ---------- */
+dialog{
+  border:1px solid var(--line-strong); border-radius:8px; padding:0; background:var(--surface); color:var(--ink);
+  max-width:720px; width:calc(100% - 32px); box-shadow:var(--shadow);
+}
+dialog::backdrop{background:rgba(20,26,23,.5)}
+.dlg-h{padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px}
+.dlg-h h3{font-size:17px; font-weight:600; margin-right:auto}
+.dlg-b{padding:22px; max-height:min(70vh,620px); overflow-y:auto}
+.dlg-f{padding:14px 22px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end; background:var(--surface-2)}
+.x{background:none;border:0;cursor:pointer;color:var(--muted);font-size:22px;line-height:1;padding:0 4px}
+.x:hover{color:var(--ink)}
+
+.calc{
+  background:var(--accent-soft); border:1px solid var(--accent); border-radius:var(--r);
+  padding:11px 14px; display:flex; align-items:baseline; gap:10px; color:var(--accent-ink);
+}
+.calc b{font-family:"Fira Mono",monospace; font-size:22px; font-weight:700}
+.calc span{font-size:13px}
+
+.note{background:var(--warn-soft); color:var(--warn); border-radius:var(--r); padding:10px 14px; font-size:13.5px; margin-bottom:18px}
+
+/* ---------- detail rows in modal ---------- */
+.dl{display:grid; grid-template-columns:auto 1fr; gap:8px 18px; font-size:14px}
+.dl dt{color:var(--muted); font-size:12px; letter-spacing:.05em; text-transform:uppercase; padding-top:2px}
+.dl dd{margin:0}
+.dec{border:1px solid var(--line); border-radius:var(--r); padding:14px; margin-top:16px}
+.dec h4{margin:0 0 8px; font-size:12px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); font-family:"Fira Sans",sans-serif; font-weight:600}
+
+
+.userchip{font-size:12.5px;color:var(--muted);padding:4px 10px;border:1px solid var(--line);border-radius:100px;white-space:nowrap}
+#setup{position:fixed;inset:0;z-index:100;background:var(--paper);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+#setup[hidden]{display:none}
+.setup-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:30px;max-width:560px;width:100%}
+.setup-card h2{font-size:20px;font-weight:600;margin-bottom:6px}
+.setup-card .lead{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+.setup-card code{font-family:"Fira Mono",monospace;font-size:12.5px;background:var(--surface-2);padding:3px 7px;border-radius:4px;word-break:break-all;display:inline-block;margin-top:4px}
+.stage{display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:14px;margin:0}
+.stage::before{content:"";width:13px;height:13px;border:2px solid var(--line-strong);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.stage::before{animation-duration:2.4s}}
+
+/* ---------- print form ---------- */
+#sheet{display:none}
+@media print{
+  @page{size:A4; margin:14mm}
+  .top,nav.tabs,main,dialog{display:none !important}
+  body{background:#fff; color:#000; font-size:10.5pt}
+  #sheet{display:block; font-family:"Fira Sans",Arial,sans-serif}
+}
+#sheet .ph{display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:8px}
+#sheet .co{font-family:"Roboto Slab",serif; font-size:13pt; font-weight:700; margin:0}
+#sheet .co small{display:block; font-family:"Fira Sans",sans-serif; font-size:8.5pt; font-weight:400; letter-spacing:.06em; text-transform:uppercase}
+#sheet .pr{text-align:right; font-family:"Fira Mono",monospace; font-size:9pt}
+#sheet h1{text-align:center; font-size:14pt; letter-spacing:.1em; margin:16px 0 4px}
+#sheet .sub{text-align:center; font-size:9pt; letter-spacing:.05em; text-transform:uppercase; margin:0 0 18px; color:#444}
+#sheet section{border:1px solid #000; margin-bottom:10px}
+#sheet section > h2{
+  font-family:"Fira Sans",sans-serif; font-size:8.5pt; letter-spacing:.09em; text-transform:uppercase;
+  background:#eee; margin:0; padding:4px 8px; border-bottom:1px solid #000; font-weight:700;
+}
+#sheet .fields{display:grid; grid-template-columns:1fr 1fr; gap:0}
+#sheet .fld{padding:6px 8px; border-bottom:1px solid #ccc; border-right:1px solid #ccc}
+#sheet .fld:nth-child(2n){border-right:0}
+#sheet .fld.full{grid-column:1/-1; border-right:0}
+#sheet .fld u{display:block; font-size:7.5pt; letter-spacing:.07em; text-transform:uppercase; color:#555; text-decoration:none; margin-bottom:2px}
+#sheet .fld strong{font-weight:600; font-size:10.5pt}
+#sheet .verdict{display:flex; gap:26px; padding:8px; align-items:center}
+#sheet .cb{display:flex; align-items:center; gap:7px; font-size:10.5pt}
+#sheet .cb i{width:13px;height:13px;border:1.4px solid #000;display:inline-block;position:relative;font-style:normal}
+#sheet .cb i.on::after{content:"✕"; position:absolute; inset:-4px 0 0 1px; font-size:12pt; line-height:1}
+#sheet .sigs{display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-top:26px; text-align:center; font-size:8.5pt}
+#sheet .sigs div{border-top:1px solid #000; padding-top:5px}
+#sheet .sigs u{display:block; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; font-weight:600}
+#sheet .sigs em{font-style:normal; color:#444; display:block; margin-top:2px}
+#sheet .foot{margin-top:20px; padding-top:7px; border-top:1px solid #999; font-size:7.5pt; color:#444; display:flex; justify-content:space-between}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.7.1/lib/msal-browser.min.js"></script>
+<script>
+if(typeof msal==="undefined"){
+  document.write('<scr'+'ipt src="https://alcdn.msauth.net/browser/3.7.1/js/msal-browser.min.js"><\/scr'+'ipt>');
+}
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M16 29V13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" style="color:var(--accent)"/>
+        <path d="M16 16C16 9 21 4 28 4c0 7-5 12-12 12Z" fill="var(--accent)"/>
+        <path d="M15 21C15 16 11 12 5 12c0 5 4 9 10 9Z" fill="var(--accent)" opacity=".45"/>
+      </svg>
+      <div class="brand-txt">
+        <strong>Άδειες Προσωπικού</strong>
+        <span id="coLabel">FoodWealth ΕΠΕ</span>
+      </div>
+    </div>
+    <span id="userChip" class="userchip"></span>
+    <div class="role">
+      <label for="roleSel">Είσοδος ως</label>
+      <select id="roleSel" class="ctl">
+        <option value="sec">Γραμματεία</option>
+        <option value="sup">Προϊστάμενος</option>
+        <option value="md">Διευθύνων Σύμβουλος</option>
+      </select>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="req" aria-selected="true">Αιτήσεις<span class="count" id="cPend" hidden></span></button>
+    <button role="tab" data-tab="emp" aria-selected="false">Εργαζόμενοι</button>
+    <button role="tab" data-tab="log" aria-selected="false">Αρχείο κινήσεων</button>
+    <button role="tab" data-tab="set" aria-selected="false">Ρυθμίσεις</button>
+  </nav>
+</header>
+
+<main>
+  <div id="banner"></div>
+
+  <!-- ══ ΑΙΤΗΣΕΙΣ ══ -->
+  <section class="panel on" id="p-req">
+    <div class="head">
+      <div>
+        <h2>Αιτήσεις άδειας</h2>
+        <p id="reqSub">Η γραπτή αίτηση αρχειοθετείται πρώτα· εδώ καταχωρείται και ακολουθεί την πορεία έγκρισης.</p>
+      </div>
+      <div class="sp"><button class="btn pri" id="bNew">Νέα αίτηση</button></div>
+    </div>
+    <div class="chips" id="filters"></div>
+    <div class="list" id="reqList"></div>
+  </section>
+
+  <!-- ══ ΕΡΓΑΖΟΜΕΝΟΙ ══ -->
+  <section class="panel" id="p-emp">
+    <div class="head">
+      <div>
+        <h2>Εργαζόμενοι</h2>
+        <p>Δικαιούμενες ημέρες κανονικής άδειας ανά έτος και τρέχον υπόλοιπο.</p>
+      </div>
+      <div class="sp"><button class="btn" id="bNewEmp">Προσθήκη εργαζόμενου</button></div>
+    </div>
+    <div class="tblwrap">
+      <table>
+        <thead><tr>
+          <th>Ονοματεπώνυμο</th><th>Σημείο εργασίας</th><th>Εβδομάδα</th>
+          <th style="text-align:right">Δικαιούμενες</th><th style="text-align:right">Ληφθείσες</th>
+          <th style="width:190px">Υπόλοιπο</th><th></th>
+        </tr></thead>
+        <tbody id="empBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ ΑΡΧΕΙΟ ══ -->
+  <section class="panel" id="p-log">
+    <div class="head">
+      <div>
+        <h2>Αρχείο κινήσεων</h2>
+        <p>Κάθε καταχώρηση, έγκριση, απόρριψη και εκτύπωση, με χρονοσήμανση.</p>
+      </div>
+      <div class="sp"><button class="btn" id="bExport">Εξαγωγή CSV</button></div>
+    </div>
+    <div class="box"><div class="log" id="logList"></div></div>
+  </section>
+
+  <!-- ══ ΡΥΘΜΙΣΕΙΣ ══ -->
+  <section class="panel" id="p-set">
+    <div class="head"><div>
+      <h2>Ρυθμίσεις</h2>
+      <p>Τα ονόματα εμφανίζονται στο επίσημο έντυπο που παραδίδεται στον εργαζόμενο.</p>
+    </div></div>
+    <div class="box" style="max-width:640px">
+      <h3>Στοιχεία εταιρείας &amp; υπογραφόντων</h3>
+      <div class="grid">
+        <div class="f"><label for="sCo">Επωνυμία</label><input id="sCo" class="ctl"></div>
+        <div class="f"><label for="sUnit">Μονάδα / υποκατάστημα</label><input id="sUnit" class="ctl"></div>
+        <div class="g2 grid">
+          <div class="f"><label for="sSup">Προϊστάμενος</label><input id="sSup" class="ctl">
+            <span class="hint">Εγκρίνει στο πρώτο βήμα.</span></div>
+          <div class="f"><label for="sMd">Διευθύνων Σύμβουλος</label><input id="sMd" class="ctl">
+            <span class="hint">Δίνει την τελική έγκριση.</span></div>
+        </div>
+        <div class="f"><label for="sWeek">Προεπιλεγμένη εβδομάδα εργασίας</label>
+          <select id="sWeek" class="ctl">
+            <option value="6">6ήμερη — Δευτέρα έως Σάββατο</option>
+            <option value="5">5ήμερη — Δευτέρα έως Παρασκευή</option>
+          </select>
+          <span class="hint">Ισχύει για νέους εργαζόμενους. Η εβδομάδα του καθενός ορίζεται στην καρτέλα του.</span></div>
+        <div><button class="btn pri" id="bSaveSet">Αποθήκευση</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ══ ΝΕΑ / ΕΠΕΞΕΡΓΑΣΙΑ ΑΙΤΗΣΗΣ ══ -->
+<dialog id="dReq">
+  <form method="dialog" id="fReq">
+    <div class="dlg-h"><h3>Νέα αίτηση άδειας</h3><button type="button" class="x" data-close>&times;</button></div>
+    <div class="dlg-b">
+      <div class="grid">
+        <div class="g2 grid">
+          <div class="f"><label for="rEmp">Εργαζόμενος</label><select id="rEmp" required></select></div>
+          <div class="f"><label for="rType">Είδος άδειας</label>
+            <select id="rType" required>
+              <option value="kanoniki">Κανονική άδεια</option>
+              <option value="anarrotiki">Αναρρωτική (ασθενείας)</option>
+              <option value="sxoliki">Σχολική άδεια</option>
+              <option value="aneu">Άδεια άνευ αποδοχών</option>
+            </select></div>
+        </div>
+        <div class="g3 grid">
+          <div class="f"><label for="rFrom">Από</label><input type="date" id="rFrom" required></div>
+          <div class="f"><label for="rTo">Έως</label><input type="date" id="rTo" required></div>
+          <div class="f"><label for="rDays">Εργάσιμες ημέρες</label><input type="number" id="rDays" min="0" step="0.5" required>
+            <span class="hint">Υπολογίζεται αυτόματα· διόρθωσέ το αν χρειάζεται.</span></div>
+        </div>
+        <div class="calc" id="rCalc" hidden><b id="rCalcN">0</b><span id="rCalcT"></span></div>
+        <div class="g2 grid">
+          <div class="f"><label for="rPaper">Ημ/νία γραπτής αίτησης</label><input type="date" id="rPaper">
+            <span class="hint">Το χαρτί που κατέθεσε ο εργαζόμενος.</span></div>
+          <div class="f"><label for="rCert">Δικαιολογητικό</label><input id="rCert" placeholder="π.χ. ιατρική βεβαίωση αρ. 4471">
+            <span class="hint">Προαιρετικό — για αναρρωτική ή σχολική.</span></div>
+        </div>
+        <div class="f"><label for="rReason">Αιτιολογία</label><textarea id="rReason" placeholder="Όπως αναγράφεται στη γραπτή αίτηση"></textarea></div>
+      </div>
+    </div>
+    <div class="dlg-f">
+      <button type="button" class="btn" data-close>Ακύρωση</button>
+      <button type="submit" class="btn pri">Καταχώρηση &amp; αποστολή στον προϊστάμενο</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ══ ΚΑΡΤΕΛΑ ΑΙΤΗΣΗΣ ══ -->
+<dialog id="dView">
+  <div class="dlg-h"><h3 id="vTitle">Αίτηση</h3><button type="button" class="x" data-close>&times;</button></div>
+  <div class="dlg-b" id="vBody"></div>
+  <div class="dlg-f" id="vFoot"></div>
+</dialog>
+
+<!-- ══ ΕΡΓΑΖΟΜΕΝΟΣ ══ -->
+<dialog id="dEmp">
+  <form method="dialog" id="fEmp">
+    <div class="dlg-h"><h3 id="eTitle">Εργαζόμενος</h3><button type="button" class="x" data-close>&times;</button></div>
+    <div class="dlg-b"><div class="grid">
+      <div class="f"><label for="eName">Ονοματεπώνυμο</label><input id="eName" required></div>
+      <div class="g2 grid">
+        <div class="f"><label for="eSite">Σημείο εργασίας</label>
+          <select id="eSite"><option>Συσκευαστήριο</option><option>Κάστρο</option><option>Αυλώνας</option><option>Γραφεία</option></select></div>
+        <div class="f"><label for="eWeek">Εβδομάδα εργασίας</label>
+          <select id="eWeek"><option value="6">6ήμερη — Δευτ. έως Σάβ.</option><option value="5">5ήμερη — Δευτ. έως Παρ.</option></select></div>
+      </div>
+      <div class="g2 grid">
+        <div class="f"><label for="eEnt">Δικαιούμενες ημέρες / έτος</label><input type="number" id="eEnt" min="0" step="0.5" value="20" required></div>
+        <div class="f"><label for="eUsed">Ήδη ληφθείσες φέτος</label><input type="number" id="eUsed" min="0" step="0.5" value="0">
+          <span class="hint">Ημέρες κανονικής άδειας πριν μπει το πρόγραμμα.</span></div>
+      </div>
+      <div class="f"><label for="eActive">Κατάσταση</label>
+        <select id="eActive"><option value="1">Ενεργός</option><option value="0">Ανενεργός</option></select></div>
+    </div></div>
+    <div class="dlg-f">
+      <button type="button" class="btn bad" id="eDel" style="margin-right:auto">Διαγραφή</button>
+      <button type="button" class="btn" data-close>Ακύρωση</button>
+      <button type="submit" class="btn pri">Αποθήκευση</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ══ ΕΠΙΣΗΜΟ ΕΝΤΥΠΟ ══ -->
+<div id="sheet"></div>
+
+<div id="setup" hidden>
+  <div class="setup-card">
+    <h2>Σύνδεση με SharePoint</h2>
+    <p id="stage" class="stage" hidden></p>
+    <div id="setupErr"></div>
+    <div id="setupForm">
+      <p class="lead">Τα δεδομένα αποθηκεύονται σε λίστες μέσα στον χώρο SharePoint της εταιρείας.
+      Οι λίστες δημιουργούνται αυτόματα την πρώτη φορά.</p>
+      <div class="grid">
+        <div class="f"><label for="cSite">Διεύθυνση χώρου SharePoint</label>
+          <input id="cSite" placeholder="https://etaireia.sharepoint.com"></div>
+        <div class="f"><label for="cTenant">Directory (tenant) ID</label>
+          <input id="cTenant" placeholder="00000000-0000-0000-0000-000000000000"></div>
+        <div class="f"><label for="cClient">Application (client) ID</label>
+          <input id="cClient" placeholder="00000000-0000-0000-0000-000000000000"></div>
+      </div>
+      <p class="lead" style="margin-top:16px">Στην καταχώρηση εφαρμογής του Entra ID, το Redirect URI
+      (τύπου <em>Single-page application</em>) πρέπει να είναι ακριβώς:<br>
+      <code id="redirUri"></code></p>
+      <div style="display:flex;gap:8px;margin-top:18px">
+        <button class="btn pri" id="bConnect">Σύνδεση</button>
+        <button class="btn" id="bForget">Καθαρισμός στοιχείων</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+
+/* ═══════ SharePoint / Microsoft Graph — επίπεδο δεδομένων ═══════ */
+"use strict";
+
+var TYPES={
+  kanoniki:{l:"Κανονική άδεια",short:"Κανονική",counts:true},
+  anarrotiki:{l:"Αναρρωτική άδεια (ασθενείας)",short:"Αναρρωτική",counts:false},
+  sxoliki:{l:"Σχολική άδεια",short:"Σχολική",counts:false},
+  aneu:{l:"Άδεια άνευ αποδοχών",short:"Άνευ αποδοχών",counts:false}
+};
+var STATUS={
+  pending_sup:{l:"Αναμονή προϊσταμένου",c:"sup"},
+  pending_md:{l:"Αναμονή τελικής έγκρισης",c:"md"},
+  approved:{l:"Εγκεκριμένη",c:"ok"},
+  rejected:{l:"Απορριφθείσα",c:"no"}
+};
+var ROLES={sec:"Γραμματεία",sup:"Προϊστάμενος",md:"Διευθύνων Σύμβουλος"};
+
+/* ── επίσημες αργίες ── */
+function orthodoxEaster(y){
+  var a=y%4,b=y%7,c=y%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7;
+  var m=Math.floor((d+e+114)/31), day=((d+e+114)%31)+1;
+  var jul=new Date(Date.UTC(y,m-1,day)); jul.setUTCDate(jul.getUTCDate()+13); return jul;
+}
+function holidays(y){
+  var E=orthodoxEaster(y), s=new Set();
+  var off=function(n){var d=new Date(E); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10);};
+  [[0,1],[0,6],[2,25],[4,1],[7,15],[9,28],[11,25],[11,26]].forEach(function(p){
+    s.add(new Date(Date.UTC(y,p[0],p[1])).toISOString().slice(0,10)); });
+  s.add(off(-48)); s.add(off(-2)); s.add(off(1)); s.add(off(50));
+  return s;
+}
+var HOL={};
+function isHoliday(iso){var y=+iso.slice(0,4); if(!HOL[y])HOL[y]=holidays(y); return HOL[y].has(iso);}
+function workDays(from,to,week){
+  if(!from||!to) return 0;
+  var a=new Date(from+"T00:00:00Z"), b=new Date(to+"T00:00:00Z");
+  if(isNaN(a)||isNaN(b)||b<a) return 0;
+  var n=0,g=0;
+  while(a<=b && g++<800){
+    var wd=a.getUTCDay(), iso=a.toISOString().slice(0,10);
+    var w = week===5 ? (wd>=1&&wd<=5) : (wd>=1&&wd<=6);
+    if(w && !isHoliday(iso)) n++;
+    a.setUTCDate(a.getUTCDate()+1);
+  }
+  return n;
+}
+
+/* ── βοηθητικά ── */
+var $=function(s){return document.querySelector(s);};
+var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
+var esc=function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);};
+var gr=function(iso){ if(!iso) return "—"; var p=String(iso).slice(0,10).split("-"); return p[2]+"/"+p[1]+"/"+p[0]; };
+var grt=function(ts){ var d=new Date(ts); if(isNaN(d)||!ts) return "—";
+  return ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+d.getFullYear()+
+    " "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); };
+function lsGet(k,f){ try{var v=localStorage.getItem("adeies:"+k); return v?JSON.parse(v):f;}catch(e){return f;} }
+function lsSet(k,v){ try{localStorage.setItem("adeies:"+k,JSON.stringify(v));}catch(e){} }
+
+/* ── ορισμοί λιστών ── */
+var LISTS={
+  employees:{name:"AdeiesEmployees", cols:[
+    {name:"Key",text:{}},{name:"EmpName",text:{}},{name:"WorkSite",text:{}},
+    {name:"Entitlement",number:{}},{name:"Active",number:{}},
+    {name:"WorkWeek",number:{}},{name:"CarryIn",number:{}}]},
+  requests:{name:"AdeiesRequests", cols:[
+    {name:"Key",text:{}},{name:"EmpKey",text:{}},{name:"EmpName",text:{}},{name:"WorkSite",text:{}},
+    {name:"LeaveType",text:{}},{name:"FromDate",text:{}},{name:"ToDate",text:{}},{name:"Days",number:{}},
+    {name:"PaperDate",text:{}},{name:"Cert",text:{}},{name:"Reason",text:{allowMultipleLines:true}},
+    {name:"Status",text:{}},{name:"CreatedAtMs",text:{}},{name:"CreatedByRole",text:{}},
+    {name:"SupOk",number:{}},{name:"SupAt",text:{}},{name:"SupBy",text:{}},{name:"SupNote",text:{allowMultipleLines:true}},
+    {name:"MdOk",number:{}},{name:"MdAt",text:{}},{name:"MdBy",text:{}},{name:"MdNote",text:{allowMultipleLines:true}}]},
+  log:{name:"AdeiesLog", cols:[
+    {name:"Key",text:{}},{name:"Ts",text:{}},{name:"Protocol",text:{}},{name:"Person",text:{}},
+    {name:"Who",text:{}},{name:"Detail",text:{allowMultipleLines:true}},{name:"Kind",text:{}}]},
+  config:{name:"AdeiesConfig", cols:[
+    {name:"Key",text:{}},{name:"Company",text:{}},{name:"Unit",text:{}},
+    {name:"Supervisor",text:{}},{name:"MdName",text:{}},{name:"WeekDays",number:{}}]}
+};
+
+var MAP={
+  employees:{
+    out:function(o){return {Title:o.name||"—",Key:o.id,EmpName:o.name,WorkSite:o.site,
+      Entitlement:+o.entitlement||0,Active:o.active==0?0:1,
+      WorkWeek:+o.week||6,CarryIn:+o.carryIn||0};},
+    in:function(f,gid){return {_gid:gid,id:f.Key,name:f.EmpName||f.Title,site:f.WorkSite,
+      entitlement:+f.Entitlement||0,active:f.Active==0?0:1,
+      week:+f.WorkWeek||6,carryIn:+f.CarryIn||0};}
+  },
+  requests:{
+    out:function(o){var x={Title:o.protocol,Key:o.id,EmpKey:o.employeeId,EmpName:o.employeeName,
+      WorkSite:o.site,LeaveType:o.type,FromDate:o.from,ToDate:o.to,Days:+o.days||0,
+      PaperDate:o.paperDate||"",Cert:o.cert||"",Reason:o.reason||"",Status:o.status,
+      CreatedAtMs:String(o.createdAt||""),CreatedByRole:o.createdBy||""};
+      if(o.sup){x.SupOk=o.sup.ok?1:0; x.SupAt=String(o.sup.at); x.SupBy=o.sup.by||""; x.SupNote=o.sup.note||"";}
+      if(o.md){ x.MdOk=o.md.ok?1:0;  x.MdAt=String(o.md.at);  x.MdBy=o.md.by||"";  x.MdNote=o.md.note||"";}
+      return x;},
+    in:function(f,gid){
+      var r={_gid:gid,id:f.Key,protocol:f.Title,employeeId:f.EmpKey,employeeName:f.EmpName,site:f.WorkSite,
+        type:f.LeaveType,from:f.FromDate,to:f.ToDate,days:+f.Days||0,paperDate:f.PaperDate,cert:f.Cert,
+        reason:f.Reason,status:f.Status,createdAt:+f.CreatedAtMs||0,createdBy:f.CreatedByRole};
+      if(f.SupAt) r.sup={ok:f.SupOk==1,at:+f.SupAt,by:f.SupBy,note:f.SupNote};
+      if(f.MdAt)  r.md ={ok:f.MdOk==1, at:+f.MdAt, by:f.MdBy, note:f.MdNote};
+      return r;}
+  },
+  log:{
+    out:function(o){return {Title:o.action,Key:o.id,Ts:String(o.ts),Protocol:o.protocol||"",
+      Person:o.person||"",Who:o.who||"",Detail:o.detail||"",Kind:o.kind||""};},
+    in:function(f,gid){return {_gid:gid,id:f.Key,ts:+f.Ts||0,protocol:f.Protocol,person:f.Person,
+      who:f.Who,action:f.Title,detail:f.Detail,kind:f.Kind};}
+  }
+};
+
+var DEFAULTS={company:"FoodWealth ΕΠΕ",unit:"Aroma Fresh Farms",supervisor:"",md:"",week:6};
+var SEED_EMP=[];  /* κανένα προσωπικό δεδομένο μέσα στο αρχείο */
+
+var S={cfg:Object.assign({},DEFAULTS),emps:[],reqs:[],log:[],cfgGid:null};
+var role="sec", filter="all", editEmp=null;
+var CONF=lsGet("sp",null);
+var APP=null, account=null, siteId=null, listIds={};
+var SCOPES=["https://graph.microsoft.com/Sites.Manage.All"];
+
+/* ── Graph ── */
+async function token(){
+  try{ var r=await APP.acquireTokenSilent({scopes:SCOPES,account:account}); return r.accessToken; }
+  catch(e){ var r2=await APP.acquireTokenPopup({scopes:SCOPES,account:account}); return r2.accessToken; }
+}
+async function graph(path,opts){
+  opts=opts||{};
+  var t=await token();
+  var url = path.indexOf("http")===0 ? path : "https://graph.microsoft.com/v1.0"+path;
+  var res=await fetch(url,{method:opts.method||"GET",
+    headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},
+    body:opts.body?JSON.stringify(opts.body):undefined});
+  if(res.status===204) return null;
+  var j=await res.json().catch(function(){return null;});
+  if(!res.ok) throw new Error((j&&j.error&&j.error.message)||(res.status+" "+res.statusText));
+  return j;
+}
+async function resolveSite(){
+  var u=new URL(CONF.site);
+  var p=u.pathname.replace(/\/+$/,"");
+  var s=await graph("/sites/"+u.hostname+":"+(p||"/"));
+  siteId=s.id;
+}
+async function ensureLists(){
+  var have=await graph("/sites/"+siteId+"/lists?$select=id,name,displayName&$top=400");
+  var byName={}; (have.value||[]).forEach(function(l){ byName[l.name]=l.id; byName[l.displayName]=l.id; });
+  for(var k in LISTS){
+    var def=LISTS[k];
+    if(byName[def.name]){ listIds[k]=byName[def.name]; await ensureColumns(k); continue; }
+    var created=await graph("/sites/"+siteId+"/lists",{method:"POST",body:{
+      displayName:def.name, list:{template:"genericList"}, columns:def.cols}});
+    listIds[k]=created.id;
+  }
+}
+async function ensureColumns(k){
+  var lid=listIds[k];
+  var cur=await graph("/sites/"+siteId+"/lists/"+lid+"/columns?$select=name");
+  var have={}; (cur.value||[]).forEach(function(c){ have[c.name]=1; });
+  var want=LISTS[k].cols;
+  for(var i=0;i<want.length;i++){
+    if(have[want[i].name]) continue;
+    try{ await graph("/sites/"+siteId+"/lists/"+lid+"/columns",{method:"POST",body:want[i]}); }catch(e){}
+  }
+}
+async function readList(k){
+  var out=[], url="/sites/"+siteId+"/lists/"+listIds[k]+"/items?expand=fields&$top=500", g=0;
+  while(url && g++<25){
+    var j=await graph(url);
+    (j.value||[]).forEach(function(it){ out.push(MAP[k].in(it.fields||{},it.id)); });
+    url=j["@odata.nextLink"]||null;
+  }
+  return out.filter(function(x){return x.id;});
+}
+async function upsert(k,obj){
+  var fields=MAP[k].out(obj);
+  if(obj._gid){
+    await graph("/sites/"+siteId+"/lists/"+listIds[k]+"/items/"+obj._gid+"/fields",{method:"PATCH",body:fields});
+    return obj._gid;
+  }
+  var r=await graph("/sites/"+siteId+"/lists/"+listIds[k]+"/items",{method:"POST",body:{fields:fields}});
+  return r.id;
+}
+
+/* ── ρυθμίσεις ── */
+async function loadCfg(){
+  var j=await graph("/sites/"+siteId+"/lists/"+listIds.config+"/items?expand=fields&$top=5");
+  var it=(j.value||[])[0];
+  if(it){ var f=it.fields||{}; S.cfgGid=it.id;
+    S.cfg={company:f.Company||DEFAULTS.company,unit:f.Unit||"",supervisor:f.Supervisor||"",
+      md:f.MdName||DEFAULTS.md,week:+f.WeekDays||6};
+  }else{
+    var r=await graph("/sites/"+siteId+"/lists/"+listIds.config+"/items",{method:"POST",body:{fields:{
+      Title:"config",Key:"config",Company:S.cfg.company,Unit:S.cfg.unit,
+      Supervisor:S.cfg.supervisor,MdName:S.cfg.md,WeekDays:S.cfg.week}}});
+    S.cfgGid=r.id;
+  }
+}
+async function saveCfg(){
+  try{
+    await graph("/sites/"+siteId+"/lists/"+listIds.config+"/items/"+S.cfgGid+"/fields",{method:"PATCH",body:{
+      Company:S.cfg.company,Unit:S.cfg.unit,Supervisor:S.cfg.supervisor,MdName:S.cfg.md,WeekDays:S.cfg.week}});
+    render();
+  }catch(e){ fail(e); }
+}
+
+/* ── store API ── */
+function bag(c){ return c==="requests"?S.reqs : c==="employees"?S.emps : S.log; }
+async function put(coll,obj){
+  try{
+    obj._gid=await upsert(coll,obj);
+    var arr=bag(coll), i=arr.findIndex(function(x){return x.id===obj.id;});
+    if(i>=0) arr[i]=obj; else arr.push(obj);
+    render();
+  }catch(e){ fail(e); }
+}
+async function del(coll,id){
+  try{
+    var o=bag(coll).find(function(x){return x.id===id;});
+    if(o&&o._gid) await graph("/sites/"+siteId+"/lists/"+listIds[coll]+"/items/"+o._gid,{method:"DELETE"});
+    if(coll==="requests") S.reqs=S.reqs.filter(function(x){return x.id!==id;});
+    else if(coll==="employees") S.emps=S.emps.filter(function(x){return x.id!==id;});
+    else S.log=S.log.filter(function(x){return x.id!==id;});
+    render();
+  }catch(e){ fail(e); }
+}
+function logIt(req,action,detail,kind){
+  return put("log",{id:uid(),ts:Date.now(),protocol:req?req.protocol:"—",
+    who:ROLES[role],person:req?req.employeeName:"",action:action,detail:detail||"",kind:kind||""});
+}
+function fail(e){
+  $("#banner").innerHTML='<div class="note">Το SharePoint απάντησε με σφάλμα: '+esc(e.message||e)+
+    ' — ανανέωσε τη σελίδα και δοκίμασε ξανά.</div>';
+}
+
+/* ── οθόνη ρύθμισης / σύνδεση ── */
+function setStage(t){
+  var el=$("#stage"); if(!el) return;
+  if(t===null){ el.hidden=true; return; }
+  el.hidden=false; el.textContent=t;
+}
+function showSetup(){
+  $("#setup").hidden=false; document.body.style.overflow="hidden"; $("#setupForm").hidden=false;
+  if(CONF){ $("#cTenant").value=CONF.tenant||""; $("#cClient").value=CONF.client||""; $("#cSite").value=CONF.site||""; }
+  $("#redirUri").textContent=location.origin+location.pathname;
+}
+function hideSetup(){ $("#setup").hidden=true; document.body.style.overflow=""; }
+
+async function boot(){
+  if(!CONF||!CONF.tenant||!CONF.client||!CONF.site){ showSetup(); return; }
+  $("#setup").hidden=false; document.body.style.overflow="hidden";
+  $("#setupForm").hidden=true; setStage("Σύνδεση με τον εταιρικό σου λογαριασμό…");
+  try{
+    if(location.protocol==="file:")
+      throw new Error("Η σελίδα είναι ανοιχτή απευθείας από τον δίσκο (file://). Η σύνδεση Microsoft δουλεύει μόνο μέσω http ή https — δες τις οδηγίες για τοπική δοκιμή με localhost.");
+    if(typeof msal==="undefined")
+      throw new Error("Δεν φόρτωσε η βιβλιοθήκη σύνδεσης της Microsoft. Πιθανόν το δίκτυο μπλοκάρει τα cdn.jsdelivr.net και alcdn.msauth.net — ζήτα από το IT να τα επιτρέψει.");
+    APP=new msal.PublicClientApplication({
+      auth:{clientId:CONF.client, authority:"https://login.microsoftonline.com/"+CONF.tenant,
+            redirectUri:location.origin+location.pathname},
+      cache:{cacheLocation:"localStorage"}});
+    await APP.initialize();
+    var resp=await APP.handleRedirectPromise();
+    var accs=APP.getAllAccounts();
+    if(resp&&resp.account) account=resp.account;
+    else if(accs.length) account=accs[0];
+    else account=(await APP.loginPopup({scopes:SCOPES})).account;
+    APP.setActiveAccount(account);
+
+    setStage("Άνοιγμα του χώρου SharePoint…");   await resolveSite();
+    setStage("Έλεγχος λιστών…");                 await ensureLists();
+    setStage("Φόρτωση ρυθμίσεων…");              await loadCfg();
+    setStage("Φόρτωση δεδομένων…");
+    S.emps=await readList("employees");
+    S.reqs=await readList("requests");
+    S.log =await readList("log");
+    if(!S.emps.length){
+      setStage("Πρώτη εγκατάσταση — καταχώρηση εργαζομένων…");
+      for(var i=0;i<SEED_EMP.length;i++){
+        var o={id:uid(),name:SEED_EMP[i][0],site:SEED_EMP[i][1],entitlement:20,active:1,
+               week:SEED_EMP[i][2]||6,carryIn:0};
+        o._gid=await upsert("employees",o); S.emps.push(o);
+      }
+    }
+    hideSetup();
+    $("#userChip").textContent=account.name||account.username||"";
+    role=lsGet("role","sec"); $("#roleSel").value=role;
+    render();
+  }catch(e){
+    setStage(null); $("#setupForm").hidden=false;
+    $("#setupErr").innerHTML='<div class="note">Δεν ολοκληρώθηκε η σύνδεση: '+esc(e.message||e)+'</div>';
+    showSetup();
+  }
+}
+
+
+/* ───────── υπολογισμοί ───────── */
+function usedDays(empId){
+  var e0=S.emps.find(function(x){return x.id===empId;});
+  return (e0?(+e0.carryIn||0):0) + S.reqs.filter(function(r){
+    return r.employeeId===empId && r.status==="approved" && TYPES[r.type] && TYPES[r.type].counts &&
+      (r.from||"").slice(0,4)===String(new Date().getFullYear());
+  }).reduce(function(a,r){return a+(+r.days||0);},0);
+}
+function nextProtocol(){
+  var y=new Date().getFullYear();
+  var n=S.reqs.filter(function(r){return (r.protocol||"").indexOf("ΑΔ-"+y)===0;}).length+1;
+  return "ΑΔ-"+y+"-"+("000"+n).slice(-4);
+}
+function emp(id){ return S.emps.find(function(e){return e.id===id;}) || null; }
+
+/* ───────── render ───────── */
+function render(){
+  $("#coLabel").textContent = S.cfg.unit || S.cfg.company;
+  var pend = S.reqs.filter(function(r){
+    return (role==="sup"&&r.status==="pending_sup") || (role==="md"&&r.status==="pending_md");
+  }).length;
+  var cp=$("#cPend"); cp.hidden = pend===0; cp.textContent = pend;
+  renderFilters(); renderReqs(); renderEmps(); renderLog(); renderSet();
+}
+
+function counts(){
+  var c={all:S.reqs.length,pending_sup:0,pending_md:0,approved:0,rejected:0};
+  S.reqs.forEach(function(r){ if(c[r.status]!=null) c[r.status]++; });
+  return c;
+}
+function renderFilters(){
+  var c=counts();
+  var defs=[["all","Όλες"],["pending_sup","Αναμονή προϊσταμένου"],["pending_md","Αναμονή τελικής"],
+            ["approved","Εγκεκριμένες"],["rejected","Απορριφθείσες"]];
+  $("#filters").innerHTML = defs.map(function(d){
+    return '<button class="chip" data-f="'+d[0]+'" aria-pressed="'+(filter===d[0])+'">'+d[1]+'<b>'+(c[d[0]]||0)+'</b></button>';
+  }).join("");
+}
+
+function renderReqs(){
+  var rows = S.reqs.slice().sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
+  if(filter!=="all") rows=rows.filter(function(r){return r.status===filter;});
+  var el=$("#reqList");
+  if(!rows.length){
+    el.innerHTML='<div class="empty"><h3>Καμία αίτηση εδώ</h3><p>'+
+      (S.reqs.length?"Δοκίμασε άλλο φίλτρο.":"Πάτησε «Νέα αίτηση» για να καταχωρήσεις την πρώτη.")+'</p></div>';
+    return;
+  }
+  el.innerHTML = rows.map(function(r){
+    var st=STATUS[r.status]||STATUS.pending_sup, t=TYPES[r.type]||{short:r.type};
+    var acts=[];
+    if(role==="sup"&&r.status==="pending_sup"){
+      acts.push('<button class="btn sm ok" data-act="approve" data-id="'+r.id+'">Έγκριση</button>');
+      acts.push('<button class="btn sm bad" data-act="reject" data-id="'+r.id+'">Απόρριψη</button>');
+    } else if(role==="md"&&r.status==="pending_md"){
+      acts.push('<button class="btn sm ok" data-act="approve" data-id="'+r.id+'">Τελική έγκριση</button>');
+      acts.push('<button class="btn sm bad" data-act="reject" data-id="'+r.id+'">Απόρριψη</button>');
+    }
+    if(r.status==="approved"||r.status==="rejected")
+      acts.push('<button class="btn sm" data-act="print" data-id="'+r.id+'">Εκτύπωση</button>');
+    acts.push('<button class="btn sm" data-act="view" data-id="'+r.id+'">Καρτέλα</button>');
+    return '<div class="row s-'+st.c+'">'+
+      '<div class="proto">'+esc(r.protocol)+'</div>'+
+      '<div class="who">'+esc(r.employeeName)+'<small>'+esc(r.site||"")+'</small></div>'+
+      '<div class="kind">'+esc(t.short)+'</div>'+
+      '<div class="dates">'+gr(r.from)+' – '+gr(r.to)+'</div>'+
+      '<div class="days">'+(+r.days||0)+'<small>ημ.</small></div>'+
+      '<div><span class="status st-'+st.c+'">'+st.l+'</span></div>'+
+      '<div class="acts">'+acts.join("")+'</div></div>';
+  }).join("");
+}
+
+function renderEmps(){
+  var y=new Date().getFullYear();
+  $("#empBody").innerHTML = S.emps.slice().sort(function(a,b){
+    return (a.site||"").localeCompare(b.site||"","el") || (a.name||"").localeCompare(b.name||"","el");
+  }).map(function(e){
+    var ent=+e.entitlement||0, used=usedDays(e.id), left=Math.max(0,ent-used);
+    var pct = ent>0 ? Math.round(left/ent*100) : 0;
+    return '<tr'+(e.active==0?' style="opacity:.5"':'')+'>'+
+      '<td><strong>'+esc(e.name)+'</strong>'+(e.active==0?' <span class="status st-no">ανενεργός</span>':'')+'</td>'+
+      '<td>'+esc(e.site||"—")+'</td>'+
+      '<td>'+((+e.week||6)===5?"5ήμερη":"6ήμερη")+'</td>'+
+      '<td class="num">'+ent+'</td><td class="num">'+used+'</td>'+
+      '<td><strong style="font-family:\'Fira Mono\',monospace">'+left+'</strong> <span style="color:var(--muted);font-size:12px">από '+ent+' ('+y+')</span>'+
+        '<div class="bar"><i class="'+(pct<20?"low":"")+'" style="width:'+pct+'%"></i></div></td>'+
+      '<td style="text-align:right"><button class="btn sm" data-emp="'+e.id+'">Επεξεργασία</button></td></tr>';
+  }).join("") || '<tr><td colspan="7" class="empty">Κανένας εργαζόμενος. Πάτησε «Προσθήκη εργαζόμενου».</td></tr>';
+}
+
+function renderLog(){
+  var rows=S.log.slice().sort(function(a,b){return b.ts-a.ts;}).slice(0,300);
+  $("#logList").innerHTML = rows.map(function(v){
+    return '<div class="ev '+(v.kind?"a-"+v.kind:"")+'">'+
+      '<time>'+grt(v.ts)+' · '+esc(v.protocol||"")+'</time>'+
+      '<p><b>'+esc(v.action)+'</b>'+(v.person?' — '+esc(v.person):'')+
+      ' <em>· '+esc(v.who)+(v.detail?' · '+esc(v.detail):'')+'</em></p></div>';
+  }).join("") || '<div class="empty"><h3>Το αρχείο είναι κενό</h3><p>Οι κινήσεις καταγράφονται αυτόματα.</p></div>';
+}
+
+function renderSet(){
+  $("#sCo").value=S.cfg.company||""; $("#sUnit").value=S.cfg.unit||"";
+  $("#sSup").value=S.cfg.supervisor||""; $("#sMd").value=S.cfg.md||"";
+  $("#sWeek").value=String(S.cfg.week||6);
+}
+
+/* ───────── καρτέλα αίτησης ───────── */
+function openView(id){
+  var r=S.reqs.find(function(x){return x.id===id;}); if(!r) return;
+  viewId=id;
+  var st=STATUS[r.status], t=TYPES[r.type]||{l:r.type}, e=emp(r.employeeId);
+  $("#vTitle").textContent="Αίτηση "+r.protocol;
+  var h='<dl class="dl">'+
+    '<dt>Εργαζόμενος</dt><dd><strong>'+esc(r.employeeName)+'</strong> · '+esc(r.site||"—")+'</dd>'+
+    '<dt>Είδος</dt><dd>'+esc(t.l)+'</dd>'+
+    '<dt>Διάστημα</dt><dd>'+gr(r.from)+' έως '+gr(r.to)+' · <strong>'+(+r.days||0)+'</strong> εργάσιμες ημέρες</dd>'+
+    '<dt>Κατάσταση</dt><dd><span class="status st-'+st.c+'">'+st.l+'</span></dd>'+
+    (r.paperDate?'<dt>Γραπτή αίτηση</dt><dd>'+gr(r.paperDate)+'</dd>':'')+
+    (r.cert?'<dt>Δικαιολογητικό</dt><dd>'+esc(r.cert)+'</dd>':'')+
+    (r.reason?'<dt>Αιτιολογία</dt><dd>'+esc(r.reason)+'</dd>':'')+
+    (e&&TYPES[r.type]&&TYPES[r.type].counts?'<dt>Υπόλοιπο</dt><dd>'+Math.max(0,(+e.entitlement||0)-usedDays(e.id))+' από '+(+e.entitlement||0)+' ημέρες</dd>':'')+
+    '<dt>Καταχώρηση</dt><dd>'+grt(r.createdAt)+' · '+esc(r.createdBy||"")+'</dd>'+
+  '</dl>';
+  if(r.sup) h+='<div class="dec"><h4>Απόφαση προϊσταμένου</h4>'+
+    '<span class="status st-'+(r.sup.ok?"ok":"no")+'">'+(r.sup.ok?"Εγκρίθηκε":"Απορρίφθηκε")+'</span> '+
+    '<span style="color:var(--muted);font-size:13px">'+grt(r.sup.at)+' · '+esc(r.sup.by||"")+'</span>'+
+    (r.sup.note?'<p style="margin:8px 0 0">'+esc(r.sup.note)+'</p>':'')+'</div>';
+  if(r.md) h+='<div class="dec"><h4>Τελική έγκριση</h4>'+
+    '<span class="status st-'+(r.md.ok?"ok":"no")+'">'+(r.md.ok?"Εγκρίθηκε":"Απορρίφθηκε")+'</span> '+
+    '<span style="color:var(--muted);font-size:13px">'+grt(r.md.at)+' · '+esc(r.md.by||"")+'</span>'+
+    (r.md.note?'<p style="margin:8px 0 0">'+esc(r.md.note)+'</p>':'')+'</div>';
+  $("#vBody").innerHTML=h;
+
+  var f=[];
+  if(r.status==="approved"||r.status==="rejected")
+    f.push('<button class="btn pri" data-act="print" data-id="'+r.id+'">Εκτύπωση εντύπου</button>');
+  if(role==="sec"&&r.status==="pending_sup")
+    f.push('<button class="btn bad" data-act="delete" data-id="'+r.id+'" style="margin-right:auto">Διαγραφή</button>');
+  f.push('<button class="btn" data-close>Κλείσιμο</button>');
+  $("#vFoot").innerHTML=f.join("");
+  $("#dView").showModal();
+}
+
+/* ───────── αποφάσεις ───────── */
+async function decide(id,ok){
+  var r=S.reqs.find(function(x){return x.id===id;}); if(!r) return;
+  var stage = r.status==="pending_sup" ? "sup" : "md";
+  var who = stage==="sup" ? (S.cfg.supervisor||"Προϊστάμενος") : (S.cfg.md||"Διευθύνων Σύμβουλος");
+  var note = prompt((ok?"Έγκριση":"Απόρριψη")+" αίτησης "+r.protocol+"\nΠαρατηρήσεις (προαιρετικά):","");
+  if(note===null) return;
+  r[stage]={ok:ok, at:Date.now(), by:who, note:note};
+  r.status = !ok ? "rejected" : (stage==="sup" ? "pending_md" : "approved");
+  await put("requests",r);
+  await logIt(r,
+    (stage==="sup"?"Απόφαση προϊσταμένου: ":"Τελική απόφαση: ")+(ok?"έγκριση":"απόρριψη"),
+    note||"", ok?"ok":"no");
+  if($("#dView").open) openView(id);
+}
+
+/* ───────── επίσημο έντυπο ───────── */
+function buildSheet(r){
+  var t=TYPES[r.type]||{l:r.type}, e=emp(r.employeeId);
+  var ent=e?+e.entitlement||0:0, used=e?usedDays(e.id):0;
+  var cb=function(on,txt){return '<span class="cb"><i class="'+(on?"on":"")+'"></i>'+txt+'</span>';};
+  var stage=function(d,title,name){
+    if(!d) return '<section><h2>'+title+'</h2><div class="verdict">'+cb(false,"ΕΓΚΡΙΝΕΤΑΙ")+cb(false,"ΑΠΟΡΡΙΠΤΕΤΑΙ")+
+      '<span style="margin-left:auto;font-size:8.5pt;color:#666">εκκρεμεί</span></div></section>';
+    return '<section><h2>'+title+'</h2><div class="verdict">'+cb(d.ok,"ΕΓΚΡΙΝΕΤΑΙ")+cb(!d.ok,"ΑΠΟΡΡΙΠΤΕΤΑΙ")+
+      '<span style="margin-left:auto;font-family:\'Fira Mono\',monospace;font-size:9pt">'+grt(d.at)+'</span></div>'+
+      '<div class="fields"><div class="fld full"><u>Παρατηρήσεις</u><strong>'+(esc(d.note)||"—")+'</strong></div>'+
+      '<div class="fld full" style="border-bottom:0"><u>Ονοματεπώνυμο</u><strong>'+esc(d.by||name||"—")+'</strong></div></div></section>';
+  };
+  return ''+
+  '<div class="ph"><p class="co">'+esc(S.cfg.company)+'<small>'+esc(S.cfg.unit||"")+'</small></p>'+
+  '<div class="pr">Αρ. Πρωτ. <strong>'+esc(r.protocol)+'</strong><br>Ημερομηνία '+gr(new Date().toISOString())+'</div></div>'+
+  '<h1>ΑΙΤΗΣΗ ΧΟΡΗΓΗΣΗΣ ΑΔΕΙΑΣ</h1>'+
+  '<p class="sub">Έντυπο έγκρισης — αντίγραφο εργαζόμενου / αρχείου</p>'+
+  '<section><h2>Α. Στοιχεία εργαζόμενου</h2><div class="fields">'+
+    '<div class="fld"><u>Ονοματεπώνυμο</u><strong>'+esc(r.employeeName)+'</strong></div>'+
+    '<div class="fld"><u>Σημείο εργασίας</u><strong>'+esc(r.site||"—")+'</strong></div>'+
+    '<div class="fld"><u>Ημ/νία γραπτής αίτησης</u><strong>'+gr(r.paperDate)+'</strong></div>'+
+    '<div class="fld"><u>Ημ/νία ηλεκτρονικής καταχώρησης</u><strong>'+grt(r.createdAt)+'</strong></div>'+
+  '</div></section>'+
+  '<section><h2>Β. Αιτούμενη άδεια</h2><div class="fields">'+
+    '<div class="fld"><u>Είδος άδειας</u><strong>'+esc(t.l)+'</strong></div>'+
+    '<div class="fld"><u>Εργάσιμες ημέρες</u><strong>'+(+r.days||0)+'</strong></div>'+
+    '<div class="fld"><u>Από</u><strong>'+gr(r.from)+'</strong></div>'+
+    '<div class="fld"><u>Έως και</u><strong>'+gr(r.to)+'</strong></div>'+
+    (t.counts?'<div class="fld"><u>Δικαιούμενες ημέρες έτους</u><strong>'+ent+'</strong></div>'+
+     '<div class="fld"><u>Υπόλοιπο μετά τη χορήγηση</u><strong>'+Math.max(0,ent-used)+'</strong></div>':'')+
+    (r.cert?'<div class="fld full"><u>Δικαιολογητικό</u><strong>'+esc(r.cert)+'</strong></div>':'')+
+    '<div class="fld full" style="border-bottom:0"><u>Αιτιολογία</u><strong>'+(esc(r.reason)||"—")+'</strong></div>'+
+  '</div></section>'+
+  stage(r.sup,"Γ. Απόφαση προϊσταμένου",S.cfg.supervisor)+
+  stage(r.md,"Δ. Τελική έγκριση Διευθύνοντος Συμβούλου",S.cfg.md)+
+  '<div class="sigs">'+
+    '<div><u>Ο αιτών / Η αιτούσα</u><em>'+esc(r.employeeName)+'</em></div>'+
+    '<div><u>Ο Προϊστάμενος</u><em>'+esc(S.cfg.supervisor||"—")+'</em></div>'+
+    '<div><u>Ο Διευθύνων Σύμβουλος</u><em>'+esc(S.cfg.md||"—")+'</em></div>'+
+  '</div>'+
+  '<div class="foot"><span>Αντίγραφο 1: εργαζόμενος &nbsp;·&nbsp; Αντίγραφο 2: αρχείο, συνημμένο στη γραπτή αίτηση</span>'+
+  '<span>'+esc(r.protocol)+'</span></div>';
+}
+async function printReq(id){
+  var r=S.reqs.find(function(x){return x.id===id;}); if(!r) return;
+  $("#sheet").innerHTML=buildSheet(r);
+  await logIt(r,"Εκτύπωση εντύπου","");
+  setTimeout(function(){window.print();},60);
+}
+
+/* ───────── συμβάντα ───────── */
+$$("nav.tabs button").forEach(function(b){
+  b.addEventListener("click",function(){
+    $$("nav.tabs button").forEach(function(x){x.setAttribute("aria-selected","false");});
+    b.setAttribute("aria-selected","true");
+    $$(".panel").forEach(function(p){p.classList.remove("on");});
+    $("#p-"+b.dataset.tab).classList.add("on");
+  });
+});
+$("#roleSel").addEventListener("change",function(){ role=this.value; lsSet("role",role); render(); });
+$("#filters").addEventListener("click",function(ev){
+  var b=ev.target.closest("[data-f]"); if(!b) return; filter=b.dataset.f; render();
+});
+document.addEventListener("click",function(ev){
+  var c=ev.target.closest("[data-close]");
+  if(c){ var d=c.closest("dialog"); if(d) d.close(); return; }
+  var a=ev.target.closest("[data-act]"); if(a){
+    var id=a.dataset.id, act=a.dataset.act;
+    if(act==="view") openView(id);
+    else if(act==="approve") decide(id,true);
+    else if(act==="reject") decide(id,false);
+    else if(act==="print") printReq(id);
+    else if(act==="delete"){
+      if(confirm("Διαγραφή της αίτησης; Η ενέργεια καταγράφεται στο αρχείο.")){
+        var r=S.reqs.find(function(x){return x.id===id;});
+        logIt(r,"Διαγραφή αίτησης","");
+        del("requests",id); $("#dView").close();
+      }
+    }
+    return;
+  }
+  var e=ev.target.closest("[data-emp]"); if(e) openEmp(e.dataset.emp);
+});
+
+/* νέα αίτηση */
+function fillEmpSelect(){
+  $("#rEmp").innerHTML = S.emps.filter(function(e){return e.active!=0;})
+    .sort(function(a,b){return (a.name||"").localeCompare(b.name||"","el");})
+    .map(function(e){return '<option value="'+e.id+'">'+esc(e.name)+' — '+esc(e.site||"")+'</option>';}).join("");
+}
+function recalc(){
+  var f=$("#rFrom").value, t=$("#rTo").value;
+  if(!f||!t){ $("#rCalc").hidden=true; return; }
+  var e0=emp($("#rEmp").value), wk=(e0&&+e0.week)||+S.cfg.week||6;
+  var n=workDays(f,t,wk);
+  $("#rDays").value=n;
+  $("#rCalcN").textContent=n;
+  $("#rCalcT").textContent="εργάσιμες ημέρες — "+(wk===5?"5ήμερη, Δευτ.–Παρ.":"6ήμερη, Δευτ.–Σάβ.")+", χωρίς επίσημες αργίες";
+  $("#rCalc").hidden=false;
+}
+$("#bNew").addEventListener("click",function(){
+  fillEmpSelect(); $("#fReq").reset(); $("#rCalc").hidden=true;
+  if(!S.emps.length){ alert("Πρόσθεσε πρώτα εργαζόμενους από την καρτέλα «Εργαζόμενοι»."); return; }
+  $("#dReq").showModal();
+});
+$("#rEmp").addEventListener("change",recalc);
+$("#rFrom").addEventListener("change",recalc);
+$("#rTo").addEventListener("change",recalc);
+$("#fReq").addEventListener("submit",async function(ev){
+  ev.preventDefault();
+  var e=emp($("#rEmp").value); if(!e) return;
+  var r={ id:uid(), protocol:nextProtocol(), employeeId:e.id, employeeName:e.name, site:e.site,
+    type:$("#rType").value, from:$("#rFrom").value, to:$("#rTo").value, days:+$("#rDays").value||0,
+    paperDate:$("#rPaper").value||"", cert:$("#rCert").value.trim(), reason:$("#rReason").value.trim(),
+    status:"pending_sup", createdAt:Date.now(), createdBy:ROLES[role] };
+  await put("requests",r);
+  await logIt(r,"Καταχώρηση αίτησης",TYPES[r.type].short+" · "+r.days+" ημ.");
+  $("#dReq").close();
+  filter="all"; render();
+});
+
+/* εργαζόμενοι */
+function openEmp(id){
+  editEmp=id?emp(id):null;
+  $("#eTitle").textContent = editEmp?"Επεξεργασία εργαζόμενου":"Νέος εργαζόμενος";
+  $("#eName").value=editEmp?editEmp.name:"";
+  $("#eSite").value=editEmp?(editEmp.site||"Συσκευαστήριο"):"Συσκευαστήριο";
+  $("#eEnt").value=editEmp?(+editEmp.entitlement||0):20;
+  $("#eWeek").value=String(editEmp?(+editEmp.week||6):(+S.cfg.week||6));
+  $("#eUsed").value=editEmp?(+editEmp.carryIn||0):0;
+  $("#eActive").value=editEmp?String(editEmp.active==0?0:1):"1";
+  $("#eDel").style.display=editEmp?"":"none";
+  $("#dEmp").showModal();
+}
+$("#bNewEmp").addEventListener("click",function(){openEmp(null);});
+$("#fEmp").addEventListener("submit",async function(ev){
+  ev.preventDefault();
+  var o = editEmp ? Object.assign({},editEmp) : {id:uid()};
+  o.name=$("#eName").value.trim(); o.site=$("#eSite").value;
+  o.entitlement=+$("#eEnt").value||0; o.active=+$("#eActive").value;
+  o.week=+$("#eWeek").value||6; o.carryIn=+$("#eUsed").value||0;
+  await put("employees",o);
+  $("#dEmp").close();
+});
+$("#eDel").addEventListener("click",async function(){
+  if(!editEmp) return;
+  if(S.reqs.some(function(r){return r.employeeId===editEmp.id;})){
+    alert("Ο εργαζόμενος έχει αιτήσεις στο αρχείο. Όρισέ τον «Ανενεργό» αντί να τον διαγράψεις."); return;
+  }
+  if(confirm("Διαγραφή του «"+editEmp.name+"»;")){ await del("employees",editEmp.id); $("#dEmp").close(); }
+});
+
+/* ρυθμίσεις */
+$("#bSaveSet").addEventListener("click",async function(){
+  S.cfg.company=$("#sCo").value.trim()||DEFAULTS.company;
+  S.cfg.unit=$("#sUnit").value.trim();
+  S.cfg.supervisor=$("#sSup").value.trim();
+  S.cfg.md=$("#sMd").value.trim();
+  S.cfg.week=+$("#sWeek").value||6;
+  await saveCfg();
+  this.textContent="Αποθηκεύτηκε"; var b=this;
+  setTimeout(function(){b.textContent="Αποθήκευση";},1600);
+});
+
+/* εξαγωγή */
+$("#bExport").addEventListener("click",function(){
+  var head=["Ημερομηνία","Πρωτόκολλο","Εργαζόμενος","Ενέργεια","Από","Λεπτομέρειες"];
+  var lines=[head.join(";")].concat(S.log.slice().sort(function(a,b){return b.ts-a.ts;}).map(function(v){
+    return [grt(v.ts),v.protocol,v.person,v.action,v.who,v.detail]
+      .map(function(x){return '"'+String(x==null?"":x).replace(/"/g,'""')+'"';}).join(";");
+  }));
+  var txt="﻿"+lines.join("\r\n");
+  var blob=new Blob([txt],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="arxeio-adeion.csv";
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href); a.remove();},500);
+});
+
+
+/* ── σύνδεση / ξεχάσιμο ── */
+$("#bConnect").addEventListener("click",function(){
+  var site=$("#cSite").value.trim().replace(/\/+$/,"");
+  var tenant=$("#cTenant").value.trim(), client=$("#cClient").value.trim();
+  if(!site||!tenant||!client){ $("#setupErr").innerHTML='<div class="note">Συμπλήρωσε και τα τρία πεδία.</div>'; return; }
+  CONF={site:site,tenant:tenant,client:client}; lsSet("sp",CONF);
+  $("#setupErr").innerHTML=""; boot();
+});
+$("#bForget").addEventListener("click",function(){
+  try{localStorage.removeItem("adeies:sp");}catch(e){}
+  CONF=null; $("#cSite").value=$("#cTenant").value=$("#cClient").value="";
+  $("#setupErr").innerHTML='<div class="note">Τα στοιχεία διαγράφηκαν από αυτόν τον υπολογιστή.</div>';
+});
+
+boot();
+})();
+</script>
+</body>
+</html>
