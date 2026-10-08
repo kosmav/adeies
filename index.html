@@ -293,13 +293,9 @@ if(typeof msal==="undefined"){
       </div>
     </div>
     <span id="userChip" class="userchip"></span>
-    <div class="role">
-      <label for="roleSel">Είσοδος ως</label>
-      <select id="roleSel" class="ctl">
-        <option value="sec">Γραμματεία</option>
-        <option value="sup">Προϊστάμενος</option>
-        <option value="md">Διευθύνων Σύμβουλος</option>
-      </select>
+    <div class="role"><strong id="roleLabel"></strong>
+      <button class="btn sm" id="bRefresh">Ανανέωση</button>
+      <button class="btn sm" id="bLogout">Αλλαγή ρόλου</button>
     </div>
   </div>
   <nav class="tabs" role="tablist">
@@ -310,7 +306,7 @@ if(typeof msal==="undefined"){
   </nav>
 </header>
 
-<main>
+<main inert>
   <div id="banner"></div>
 
   <!-- ══ ΑΙΤΗΣΕΙΣ ══ -->
@@ -331,16 +327,17 @@ if(typeof msal==="undefined"){
     <div class="head">
       <div>
         <h2>Εργαζόμενοι</h2>
-        <p>Δικαιούμενες ημέρες κανονικής άδειας ανά έτος και τρέχον υπόλοιπο.</p>
+        <p>Κανονική και σχολική άδεια με ξεχωριστά υπόλοιπα και συνολικό δικαίωμα.</p>
       </div>
-      <div class="sp"><button class="btn" id="bNewEmp">Προσθήκη εργαζόμενου</button></div>
+      <div class="sp"><label for="balanceYear">Έτος</label><input class="ctl" id="balanceYear" type="number" min="2000" max="2100" style="width:100px"><button class="btn" id="bNewEmp">Προσθήκη εργαζόμενου</button></div>
     </div>
     <div class="tblwrap">
       <table>
         <thead><tr>
           <th>Ονοματεπώνυμο</th><th>Σημείο εργασίας</th><th>Εβδομάδα</th>
-          <th style="text-align:right">Δικαιούμενες</th><th style="text-align:right">Ληφθείσες</th>
-          <th style="width:190px">Υπόλοιπο</th><th></th>
+          <th>Κανονική<br><small>δικαίωμα / ληφθείσες / υπόλοιπο</small></th>
+          <th>Σχολική<br><small>δικαίωμα / ληφθείσες / υπόλοιπο</small></th>
+          <th>Σύνολο<br><small>δικαίωμα / υπόλοιπο</small></th><th></th>
         </tr></thead>
         <tbody id="empBody"></tbody>
       </table>
@@ -365,6 +362,7 @@ if(typeof msal==="undefined"){
       <h2>Ρυθμίσεις</h2>
       <p>Τα ονόματα εμφανίζονται στο επίσημο έντυπο που παραδίδεται στον εργαζόμενο.</p>
     </div></div>
+    <div class="box" id="roleSettings" hidden style="max-width:640px;margin-bottom:16px"><h3>Κωδικοί &amp; σχολικές άδειες</h3><button class="btn" id="bCodes">Αλλαγή κωδικών ρόλων</button><div class="f" style="margin-top:16px"><label for="schoolImport">Εισαγωγή σχολικών δικαιωμάτων από αρχείο</label><input type="file" id="schoolImport" accept="application/json,.json"><span class="hint">Επίλεξε το αρχείο school-allowances.json του πακέτου ή συμπλήρωσε τις ημέρες στις καρτέλες εργαζομένων.</span></div></div>
     <div class="box" style="max-width:640px">
       <h3>Στοιχεία εταιρείας &amp; υπογραφόντων</h3>
       <div class="grid">
@@ -410,7 +408,7 @@ if(typeof msal==="undefined"){
           <div class="f"><label for="rDays">Εργάσιμες ημέρες</label><input type="number" id="rDays" min="0" step="0.5" required>
             <span class="hint">Υπολογίζεται αυτόματα· διόρθωσέ το αν χρειάζεται.</span></div>
         </div>
-        <div class="calc" id="rCalc" hidden><b id="rCalcN">0</b><span id="rCalcT"></span></div>
+        <p class="hint" id="rBalance"></p><div class="calc" id="rCalc" hidden><b id="rCalcN">0</b><span id="rCalcT"></span></div>
         <div class="g2 grid">
           <div class="f"><label for="rPaper">Ημ/νία γραπτής αίτησης</label><input type="date" id="rPaper">
             <span class="hint">Το χαρτί που κατέθεσε ο εργαζόμενος.</span></div>
@@ -447,53 +445,62 @@ if(typeof msal==="undefined"){
           <select id="eWeek"><option value="6">6ήμερη — Δευτ. έως Σάβ.</option><option value="5">5ήμερη — Δευτ. έως Παρ.</option></select></div>
       </div>
       <div class="g2 grid">
-        <div class="f"><label for="eEnt">Δικαιούμενες ημέρες / έτος</label><input type="number" id="eEnt" min="0" step="0.5" value="20" required></div>
-        <div class="f"><label for="eUsed">Ήδη ληφθείσες φέτος</label><input type="number" id="eUsed" min="0" step="0.5" value="0">
+        <div class="f"><label for="eEnt">Κανονική άδεια: ημέρες / έτος</label><input type="number" id="eEnt" min="0" step="0.5" value="20" required></div>
+        <div class="f"><label for="eUsed">Ήδη ληφθείσες κανονικής</label><input type="number" id="eUsed" min="0" step="0.5" value="0">
           <span class="hint">Ημέρες κανονικής άδειας πριν μπει το πρόγραμμα.</span></div>
       </div>
+      <div class="g2 grid">
+        <div class="f"><label for="eSchool">Σχολική άδεια: ημέρες / έτος</label><input type="number" id="eSchool" min="0" max="366" step="0.5" required></div>
+        <div class="f"><label for="eSchoolUsed">Ήδη ληφθείσες σχολικής</label><input type="number" id="eSchoolUsed" min="0" max="366" step="0.5" required><span class="hint">Μόνο ημέρες που δεν έχουν καταχωρηθεί ως εγκεκριμένες αιτήσεις.</span></div>
+      </div>
+      <div class="f"><label for="eCarryYear">Έτος ήδη ληφθεισών ημερών</label><input type="number" id="eCarryYear" min="2000" max="2100" required><span class="hint">Οι ήδη ληφθείσες μετρούν μόνο στο συγκεκριμένο έτος.</span></div>
       <div class="f"><label for="eActive">Κατάσταση</label>
         <select id="eActive"><option value="1">Ενεργός</option><option value="0">Ανενεργός</option></select></div>
     </div></div>
     <div class="dlg-f">
-      <button type="button" class="btn bad" id="eDel" style="margin-right:auto">Διαγραφή</button>
+      <span class="hint" style="margin-right:auto">Για αποχώρηση, όρισε τον εργαζόμενο «Ανενεργό».</span>
       <button type="button" class="btn" data-close>Ακύρωση</button>
       <button type="submit" class="btn pri">Αποθήκευση</button>
     </div>
   </form>
 </dialog>
 
+<dialog id="dAction">
+  <form method="dialog" id="fAction">
+    <div class="dlg-h"><h3 id="aTitle"></h3><button type="button" class="x" data-close aria-label="Ακύρωση">×</button></div>
+    <div class="dlg-b"><p id="aMessage"></p><div class="f" id="aNoteField"><label for="aNote">Αιτιολογία / παρατηρήσεις</label><textarea id="aNote" maxlength="2000"></textarea></div></div>
+    <div class="dlg-f"><button type="button" class="btn" data-close>Ακύρωση</button><button type="submit" class="btn pri" id="aSubmit">Συνέχεια</button></div>
+  </form>
+</dialog>
+
 <!-- ══ ΕΠΙΣΗΜΟ ΕΝΤΥΠΟ ══ -->
 <div id="sheet"></div>
 
-<div id="setup" hidden>
-  <div class="setup-card">
-    <h2>Σύνδεση με SharePoint</h2>
-    <p id="stage" class="stage" hidden></p>
-    <div id="setupErr"></div>
-    <div id="setupForm">
-      <p class="lead">Τα δεδομένα αποθηκεύονται σε λίστες μέσα στον χώρο SharePoint της εταιρείας.
-      Οι λίστες δημιουργούνται αυτόματα την πρώτη φορά.</p>
-      <div class="grid">
-        <div class="f"><label for="cSite">Διεύθυνση χώρου SharePoint</label>
-          <input id="cSite" placeholder="https://etaireia.sharepoint.com"></div>
-        <div class="f"><label for="cTenant">Directory (tenant) ID</label>
-          <input id="cTenant" placeholder="00000000-0000-0000-0000-000000000000"></div>
-        <div class="f"><label for="cClient">Application (client) ID</label>
-          <input id="cClient" placeholder="00000000-0000-0000-0000-000000000000"></div>
-      </div>
-      <p class="lead" style="margin-top:16px">Στην καταχώρηση εφαρμογής του Entra ID, το Redirect URI
-      (τύπου <em>Single-page application</em>) πρέπει να είναι ακριβώς:<br>
-      <code id="redirUri"></code></p>
-      <div style="display:flex;gap:8px;margin-top:18px">
-        <button class="btn pri" id="bConnect">Σύνδεση</button>
-        <button class="btn" id="bForget">Καθαρισμός στοιχείων</button>
-      </div>
-    </div>
+<div id="setup"><div class="setup-card">
+  <h2>Άδειες Προσωπικού</h2><div id="setupErr" class="note" role="alert"></div>
+  <form id="fLogin" hidden><p class="lead">Επίλεξε τον ρόλο σου και συμπλήρωσε τον αντίστοιχο κωδικό.</p><div class="grid">
+    <div class="f"><label for="loginRole">Ρόλος</label><select id="loginRole" autocomplete="username"><option value="sec">Γραμματεία</option><option value="sup">Προϊστάμενος</option><option value="md">Διευθύνων Σύμβουλος</option></select></div>
+    <div class="f"><label for="loginPassword">Κωδικός ρόλου</label><input type="password" id="loginPassword" autocomplete="current-password" maxlength="128" required></div>
+    <button class="btn pri" type="submit">Σύνδεση</button><button class="btn" type="button" id="bInitialCodes" hidden>Πρώτη ρύθμιση κωδικών</button>
+  </div></form>
+  <div id="spForm" hidden><p class="lead">Σύνδεση με τον εταιρικό χώρο SharePoint.</p><div class="grid">
+    <div class="f"><label for="cSite">Διεύθυνση SharePoint</label><input id="cSite"></div>
+    <div class="f"><label for="cTenant">Directory (tenant) ID</label><input id="cTenant"></div>
+    <div class="f"><label for="cClient">Application (client) ID</label><input id="cClient"></div>
+    <button class="btn pri" type="button" id="bConnect">Σύνδεση Microsoft</button>
+  </div></div>
+</div></div>
+<dialog id="dCodes"><form id="fCodes" method="dialog">
+  <div class="dlg-h"><h3 id="codesTitle">Κωδικοί ρόλων</h3><button type="button" class="x" data-close aria-label="Κλείσιμο">×</button></div>
+  <div class="dlg-b"><p>Όρισε διαφορετικό κωδικό για κάθε ρόλο, τουλάχιστον 6 χαρακτήρων.</p><div id="codesError" role="alert"></div>
+    <div class="f" id="codesCurrent"><label for="currentMdCode">Τρέχων κωδικός Διευθύνοντος Συμβούλου</label><input id="currentMdCode" type="password" autocomplete="current-password"></div>
+    <div class="grid"><div class="g2 grid"><div class="f"><label for="newCode-sec">Γραμματεία</label><input type="password" id="newCode-sec" minlength="6" maxlength="128" autocomplete="new-password" required></div><div class="f"><label for="repeatCode-sec">Επανάληψη κωδικού</label><input type="password" id="repeatCode-sec" minlength="6" maxlength="128" autocomplete="new-password" required></div></div><div class="g2 grid"><div class="f"><label for="newCode-sup">Προϊστάμενος</label><input type="password" id="newCode-sup" minlength="6" maxlength="128" autocomplete="new-password" required></div><div class="f"><label for="repeatCode-sup">Επανάληψη κωδικού</label><input type="password" id="repeatCode-sup" minlength="6" maxlength="128" autocomplete="new-password" required></div></div><div class="g2 grid"><div class="f"><label for="newCode-md">Διευθύνων Σύμβουλος</label><input type="password" id="newCode-md" minlength="6" maxlength="128" autocomplete="new-password" required></div><div class="f"><label for="repeatCode-md">Επανάληψη κωδικού</label><input type="password" id="repeatCode-md" minlength="6" maxlength="128" autocomplete="new-password" required></div></div></div>
+    <div id="codesInitial" class="f"><label for="carryBaselineYear">Σε ποιο έτος ανήκουν οι παλιές «ήδη ληφθείσες» ημέρες;</label><input id="carryBaselineYear" type="number" min="2000" max="2100"><span class="hint">Οι ημέρες αυτές θα μετρούν μόνο στο συγκεκριμένο έτος.</span></div>
   </div>
-</div>
-
-
+  <div class="dlg-f"><button class="btn" type="button" data-close>Ακύρωση</button><button class="btn pri" type="submit">Αποθήκευση κωδικών</button></div>
+</form></dialog>
 <script>
+
 (function(){
 
 /* ═══════ SharePoint / Microsoft Graph — επίπεδο δεδομένων ═══════ */
@@ -502,7 +509,7 @@ if(typeof msal==="undefined"){
 var TYPES={
   kanoniki:{l:"Κανονική άδεια",short:"Κανονική",counts:true},
   anarrotiki:{l:"Αναρρωτική άδεια (ασθενείας)",short:"Αναρρωτική",counts:false},
-  sxoliki:{l:"Σχολική άδεια",short:"Σχολική",counts:false},
+  sxoliki:{l:"Σχολική άδεια",short:"Σχολική",counts:true},
   aneu:{l:"Άδεια άνευ αποδοχών",short:"Άνευ αποδοχών",counts:false}
 };
 var STATUS={
@@ -556,291 +563,361 @@ var grt=function(ts){ var d=new Date(ts); if(isNaN(d)||!ts) return "—";
 function lsGet(k,f){ try{var v=localStorage.getItem("adeies:"+k); return v?JSON.parse(v):f;}catch(e){return f;} }
 function lsSet(k,v){ try{localStorage.setItem("adeies:"+k,JSON.stringify(v));}catch(e){} }
 
-/* ── ορισμοί λιστών ── */
-var LISTS={
-  employees:{name:"AdeiesEmployees", cols:[
-    {name:"Key",text:{}},{name:"EmpName",text:{}},{name:"WorkSite",text:{}},
-    {name:"Entitlement",number:{}},{name:"Active",number:{}},
-    {name:"WorkWeek",number:{}},{name:"CarryIn",number:{}}]},
-  requests:{name:"AdeiesRequests", cols:[
-    {name:"Key",text:{}},{name:"EmpKey",text:{}},{name:"EmpName",text:{}},{name:"WorkSite",text:{}},
-    {name:"LeaveType",text:{}},{name:"FromDate",text:{}},{name:"ToDate",text:{}},{name:"Days",number:{}},
-    {name:"PaperDate",text:{}},{name:"Cert",text:{}},{name:"Reason",text:{allowMultipleLines:true}},
-    {name:"Status",text:{}},{name:"CreatedAtMs",text:{}},{name:"CreatedByRole",text:{}},
-    {name:"SupOk",number:{}},{name:"SupAt",text:{}},{name:"SupBy",text:{}},{name:"SupNote",text:{allowMultipleLines:true}},
-    {name:"MdOk",number:{}},{name:"MdAt",text:{}},{name:"MdBy",text:{}},{name:"MdNote",text:{allowMultipleLines:true}}]},
-  log:{name:"AdeiesLog", cols:[
-    {name:"Key",text:{}},{name:"Ts",text:{}},{name:"Protocol",text:{}},{name:"Person",text:{}},
-    {name:"Who",text:{}},{name:"Detail",text:{allowMultipleLines:true}},{name:"Kind",text:{}}]},
-  config:{name:"AdeiesConfig", cols:[
-    {name:"Key",text:{}},{name:"Company",text:{}},{name:"Unit",text:{}},
-    {name:"Supervisor",text:{}},{name:"MdName",text:{}},{name:"WeekDays",number:{}}]}
-};
-
-var MAP={
-  employees:{
-    out:function(o){return {Title:o.name||"—",Key:o.id,EmpName:o.name,WorkSite:o.site,
-      Entitlement:+o.entitlement||0,Active:o.active==0?0:1,
-      WorkWeek:+o.week||6,CarryIn:+o.carryIn||0};},
-    in:function(f,gid){return {_gid:gid,id:f.Key,name:f.EmpName||f.Title,site:f.WorkSite,
-      entitlement:+f.Entitlement||0,active:f.Active==0?0:1,
-      week:+f.WorkWeek||6,carryIn:+f.CarryIn||0};}
-  },
-  requests:{
-    out:function(o){var x={Title:o.protocol,Key:o.id,EmpKey:o.employeeId,EmpName:o.employeeName,
-      WorkSite:o.site,LeaveType:o.type,FromDate:o.from,ToDate:o.to,Days:+o.days||0,
-      PaperDate:o.paperDate||"",Cert:o.cert||"",Reason:o.reason||"",Status:o.status,
-      CreatedAtMs:String(o.createdAt||""),CreatedByRole:o.createdBy||""};
-      if(o.sup){x.SupOk=o.sup.ok?1:0; x.SupAt=String(o.sup.at); x.SupBy=o.sup.by||""; x.SupNote=o.sup.note||"";}
-      if(o.md){ x.MdOk=o.md.ok?1:0;  x.MdAt=String(o.md.at);  x.MdBy=o.md.by||"";  x.MdNote=o.md.note||"";}
-      return x;},
-    in:function(f,gid){
-      var r={_gid:gid,id:f.Key,protocol:f.Title,employeeId:f.EmpKey,employeeName:f.EmpName,site:f.WorkSite,
-        type:f.LeaveType,from:f.FromDate,to:f.ToDate,days:+f.Days||0,paperDate:f.PaperDate,cert:f.Cert,
-        reason:f.Reason,status:f.Status,createdAt:+f.CreatedAtMs||0,createdBy:f.CreatedByRole};
-      if(f.SupAt) r.sup={ok:f.SupOk==1,at:+f.SupAt,by:f.SupBy,note:f.SupNote};
-      if(f.MdAt)  r.md ={ok:f.MdOk==1, at:+f.MdAt, by:f.MdBy, note:f.MdNote};
-      return r;}
-  },
-  log:{
-    out:function(o){return {Title:o.action,Key:o.id,Ts:String(o.ts),Protocol:o.protocol||"",
-      Person:o.person||"",Who:o.who||"",Detail:o.detail||"",Kind:o.kind||""};},
-    in:function(f,gid){return {_gid:gid,id:f.Key,ts:+f.Ts||0,protocol:f.Protocol,person:f.Person,
-      who:f.Who,action:f.Title,detail:f.Detail,kind:f.Kind};}
-  }
-};
-
 var DEFAULTS={company:"FoodWealth ΕΠΕ",unit:"Aroma Fresh Farms",supervisor:"",md:"",week:6};
-var SEED_EMP=[];  /* κανένα προσωπικό δεδομένο μέσα στο αρχείο */
-
-var S={cfg:Object.assign({},DEFAULTS),emps:[],reqs:[],log:[],cfgGid:null};
-var role="sec", filter="all", editEmp=null;
-var CONF=lsGet("sp",null);
-var APP=null, account=null, siteId=null, listIds={};
-var SCOPES=["https://graph.microsoft.com/Sites.Manage.All"];
-
-/* ── Graph ── */
-async function token(){
-  try{ var r=await APP.acquireTokenSilent({scopes:SCOPES,account:account}); return r.accessToken; }
-  catch(e){
-    /* χωρίς popup — ανακατεύθυνση, ώστε να μη μπλοκάρεται από τον browser */
-    await APP.acquireTokenRedirect({scopes:SCOPES,account:account});
-    throw new Error("Γίνεται ανακατεύθυνση για ανανέωση της σύνδεσης…");
+var S={cfg:Object.assign({},DEFAULTS),emps:[],reqs:[],log:[]};
+var role=null,filter="all",editEmp=null,balanceYear=new Date().getFullYear(),busy=false;
+var ShareSchema=(function(){
+const text = name => ({name, text: {}});
+const number = name => ({name, number: {}});
+const multiline = name => ({name, text: {allowMultipleLines: true}});
+const schema = {
+  employees: {name: 'AdeiesEmployees', cols: [
+    ...['Key','EmpName','WorkSite'].map(text),
+    ...['Entitlement','Active','WorkWeek','CarryIn','SchoolEntitlement','SchoolCarryIn','CarryYear'].map(number)]},
+  requests: {name: 'AdeiesRequests', cols: [
+    ...['Key','EmpKey','EmpName','WorkSite','LeaveType','FromDate','ToDate','PaperDate','Cert','Status','CreatedAtMs','CreatedByRole','SupAt','SupBy','MdAt','MdBy'].map(text),
+    ...['Days','SupOk','MdOk','Deleted'].map(number),
+    ...['Reason','SupNote','MdNote','Deletion','EventHistory'].map(multiline)]},
+  log: {name: 'AdeiesLog', cols: [...['Key','Ts','Protocol','Person','Who','Kind'].map(text), multiline('Detail')]},
+  config: {name: 'AdeiesConfig', cols: [...['Key','Company','Unit','Supervisor','MdName'].map(text),number('WeekDays'),number('CarryBaselineYear'),multiline('RoleCodes')]}
+};
+function json(value, fallback) {
+  if (!value) return fallback;
+  try { return JSON.parse(value); } catch { throw new Error('Μη έγκυρα αποθηκευμένα δεδομένα ιστορικού. Απαιτείται έλεγχος από τον διαχειριστή.'); }
+}
+function decode(kind, item) {
+  const f = item.fields || {};
+  const meta = {_gid: item.id, _etag: item.eTag || item['@odata.etag'] || f['@odata.etag'], id: f.Key};
+  if (kind === 'employees') return {...meta, name:f.EmpName||f.Title,site:f.WorkSite||'',entitlement:+f.Entitlement||0,active:f.Active===0?0:1,week:+f.WorkWeek||6,carryIn:+f.CarryIn||0,schoolEntitlement:+f.SchoolEntitlement||0,schoolCarryIn:+f.SchoolCarryIn||0,carryYear:+f.CarryYear||0};
+  if (kind === 'requests') {
+    const r = {...meta,protocol:f.Title,employeeId:f.EmpKey,employeeName:f.EmpName,site:f.WorkSite,type:f.LeaveType,from:f.FromDate,to:f.ToDate,days:+f.Days||0,paperDate:f.PaperDate||'',cert:f.Cert||'',reason:f.Reason||'',status:f.Status,createdAt:+f.CreatedAtMs||0,createdBy:f.CreatedByRole||'',deleted:f.Deleted===1,deletion:json(f.Deletion,null),events:json(f.EventHistory,[])};
+    for (const [p, c] of [['sup','Sup'],['md','Md']]) if (f[c+'At']) r[p] = {ok:f[c+'Ok']===1,at:+f[c+'At'],by:f[c+'By']||'',note:f[c+'Note']||''};
+    return r;
   }
+  if (kind === 'config') return {...meta,company:f.Company||'FoodWealth ΕΠΕ',unit:f.Unit||'',supervisor:f.Supervisor||'',md:f.MdName||'',week:+f.WeekDays||6,roleCodes:json(f.RoleCodes,{}),carryBaselineYear:+f.CarryBaselineYear||0};
+  return {...meta,ts:+f.Ts||0,protocol:f.Protocol,person:f.Person,who:f.Who,action:f.Title,detail:f.Detail,kind:f.Kind};
 }
-async function graph(path,opts){
-  opts=opts||{};
-  var t=await token();
-  var url = path.indexOf("http")===0 ? path : "https://graph.microsoft.com/v1.0"+path;
-  var res=await fetch(url,{method:opts.method||"GET",
-    headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},
-    body:opts.body?JSON.stringify(opts.body):undefined});
-  if(res.status===204) return null;
-  var j=await res.json().catch(function(){return null;});
-  if(!res.ok) throw new Error((j&&j.error&&j.error.message)||(res.status+" "+res.statusText));
-  return j;
+function encode(kind, o) {
+  if (kind === 'employees') return {Title:o.name,Key:o.id,EmpName:o.name,WorkSite:o.site,Entitlement:o.entitlement,Active:o.active,WorkWeek:o.week,CarryIn:o.carryIn,SchoolEntitlement:o.schoolEntitlement,SchoolCarryIn:o.schoolCarryIn,CarryYear:o.carryYear};
+  if (kind === 'requests') {
+    const f = {Title:o.protocol,Key:o.id,EmpKey:o.employeeId,EmpName:o.employeeName,WorkSite:o.site,LeaveType:o.type,FromDate:o.from,ToDate:o.to,Days:o.days,PaperDate:o.paperDate,Cert:o.cert,Reason:o.reason,Status:o.status,CreatedAtMs:String(o.createdAt),CreatedByRole:o.createdBy,Deleted:o.deleted?1:0,Deletion:JSON.stringify(o.deletion||null),EventHistory:JSON.stringify(o.events||[])};
+    for (const [p,c] of [['sup','Sup'],['md','Md']]) if (o[p]) Object.assign(f,{[c+'Ok']:o[p].ok?1:0,[c+'At']:String(o[p].at),[c+'By']:o[p].by,[c+'Note']:o[p].note});
+    return f;
+  }
+  if (kind === 'config') return {Title:'config',Key:o.id||'config',Company:o.company,Unit:o.unit,Supervisor:o.supervisor,MdName:o.md,WeekDays:o.week,RoleCodes:JSON.stringify(o.roleCodes||{}),CarryBaselineYear:o.carryBaselineYear||0};
+  return {Title:o.action,Key:o.id,Ts:String(o.ts),Protocol:o.protocol||'',Person:o.person||'',Who:o.who||'',Detail:o.detail||'',Kind:o.kind||''};
 }
-async function resolveSite(){
-  var u=new URL(CONF.site);
-  var p=u.pathname.replace(/\/+$/,"");
-  var s=await graph("/sites/"+u.hostname+":"+(p||"/"));
-  siteId=s.id;
+
+return {schema,decode,encode};})();
+var Domain=(function(){
+const randomUUID=()=>crypto.randomUUID();
+const ROLES={sec:'Γραμματεία',sup:'Προϊστάμενος',md:'Διευθύνων Σύμβουλος'};
+class UserError extends Error { constructor(message,status=400) { super(message); this.status=status; } }
+const assert=(ok,msg,status)=>{if(!ok)throw new UserError(msg,status);};
+const clean=(v,max=2000)=>{assert(typeof v==='string'&&v.length<=max,'Μη έγκυρο κείμενο.');return v.trim();};
+const num=v=>{assert(typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=366&&v*2===Math.floor(v*2),'Οι ημέρες πρέπει να είναι από 0 έως 366, ανά μισή ημέρα.');return v;};
+function currentYear() { return Number(new Intl.DateTimeFormat('en',{year:'numeric',timeZone:'Europe/Athens'}).format(new Date())); }
+function date(v,optional=false) { if(optional&&!v)return ''; assert(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&!isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v,'Μη έγκυρη ημερομηνία.'); return v; }
+function usedDays(e,requests,type='kanoniki',year=currentYear()) {
+  const carry=e.carryYear===year?(type==='sxoliki'?e.schoolCarryIn:e.carryIn)||0:0;
+  return carry+requests.filter(r=>r.employeeId===e.id&&!r.deleted&&r.status==='approved'&&r.type===type&&(r.from||'').slice(0,4)===String(year)).reduce((n,r)=>n+r.days,0);
+}
+function audit(r,role,action,detail='') {
+  const event={id:randomUUID(),ts:Date.now(),protocol:r.protocol,person:r.employeeName,who:ROLES[role],action,detail};
+  r.events=[...(r.events||[]),event];
+  assert(JSON.stringify(r.events).length<60000,'Το ιστορικό της αίτησης έφτασε το όριό του. Επικοινώνησε με τον διαχειριστή.');
+}
+class Service {
+  constructor(store) { this.store=store; this.tail=Promise.resolve(); }
+  // Serialize actions in this tab; SharePoint etags reject stale changes to each request.
+  run(fn) { const next=this.tail.then(fn); this.tail=next.catch(()=>{}); return next; }
+  async state(role) {
+    assert(ROLES[role],'Απαιτείται σύνδεση.',401);
+    const [emps,reqs,log,cfg]=await Promise.all(['employees','requests','log','config'].map(k=>this.store.all(k)));
+    return {role,year:currentYear(),emps,reqs,log:[...log,...reqs.flatMap(r=>r.events||[])],cfg:cfg[0]||{company:'FoodWealth ΕΠΕ',unit:'Aroma Fresh Farms',supervisor:'',md:'',week:6}};
+  }
+  execute(role,body) { return this.run(async()=>{
+    assert(ROLES[role],'Απαιτείται σύνδεση.',401);
+    assert(body&&typeof body==='object','Μη έγκυρο αίτημα.');
+    const state=await this.state(role), {action}=body;
+    if (action==='request.create') {
+      const d=body.data||{}, e=state.emps.find(x=>x.id===d.employeeId&&x.active!==0);
+      assert(e,'Επίλεξε ενεργό εργαζόμενο.');
+      const from=date(d.from),to=date(d.to),days=num(d.days);
+      assert(to>=from&&to.slice(0,4)===from.slice(0,4),'Οι ημερομηνίες πρέπει να είναι με σωστή σειρά και στο ίδιο έτος. Χώρισε άδεια που περνά στην επόμενη χρονιά.');
+      assert(days>0&&days<=(Date.parse(to)-Date.parse(from))/86400000+1,'Συμπλήρωσε έγκυρο αριθμό ημερών για το διάστημα.');
+      assert(['kanoniki','sxoliki','anarrotiki','aneu'].includes(d.type),'Μη έγκυρο είδος άδειας.');
+      if(d.type==='sxoliki') assert(e.schoolEntitlement>0,'Ο εργαζόμενος δεν έχει καταχωρημένο δικαίωμα σχολικής άδειας.');
+      const id=randomUUID();
+      const r={id,protocol:'ΑΔ-'+currentYear()+'-'+id.slice(0,8).toUpperCase(),employeeId:e.id,employeeName:e.name,site:e.site,type:d.type,from,to,days,paperDate:date(d.paperDate,true),cert:clean(d.cert||'',500),reason:clean(d.reason||''),status:'pending_sup',createdAt:Date.now(),createdBy:ROLES[role],deleted:false,deletion:null,events:[]};
+      audit(r,role,'Καταχώρηση αίτησης',r.days+' ημ.'); await this.store.save('requests',r);
+    } else if (['request.decide','deletion.request','deletion.approve','deletion.reject','deletion.direct','request.print'].includes(action)) {
+      const r=state.reqs.find(x=>x.id===body.id); assert(r,'Η αίτηση δεν βρέθηκε.',404);
+      assert(!r.deleted,'Η αίτηση έχει ήδη διαγραφεί.',409);
+      assert(body.version&&body.version===r._etag,'Η αίτηση άλλαξε. Κάνε ανανέωση πριν συνεχίσεις.',409);
+      const note=clean(body.note||'');
+      if(action==='request.decide') {
+        assert((role==='sup'&&r.status==='pending_sup')||(role==='md'&&r.status==='pending_md'),'Δεν επιτρέπεται αυτή η απόφαση για τον ρόλο ή την κατάσταση της αίτησης.',403);
+        assert(r.deletion?.state!=='pending','Εκκρεμεί αίτημα διαγραφής. Ολοκλήρωσέ το πρώτα.',409);
+        assert(typeof body.ok==='boolean','Μη έγκυρη απόφαση.');
+        if(role==='md'&&body.ok&&['kanoniki','sxoliki'].includes(r.type)) {
+          const e=state.emps.find(x=>x.id===r.employeeId); assert(e,'Δεν βρέθηκε ο εργαζόμενος.');
+          const ent=r.type==='sxoliki'?e.schoolEntitlement:e.entitlement;
+          assert(usedDays(e,state.reqs,r.type,+r.from.slice(0,4))+r.days<=ent,'Δεν επαρκεί το υπόλοιπο '+(r.type==='sxoliki'?'σχολικής':'κανονικής')+' άδειας.');
+        }
+        r[role]={ok:body.ok,at:Date.now(),by:ROLES[role],note};
+        r.status=!body.ok?'rejected':role==='sup'?'pending_md':'approved';
+        audit(r,role,(role==='sup'?'Απόφαση προϊσταμένου: ':'Τελική απόφαση: ')+(body.ok?'έγκριση':'απόρριψη'),note);
+      } else if(action==='deletion.request') {
+        assert(role==='sec'||role==='sup','Ο Διευθύνων Σύμβουλος μπορεί να διαγράψει απευθείας.',403);
+        assert(r.deletion?.state!=='pending','Υπάρχει ήδη αίτημα διαγραφής.',409);
+        assert(note,'Γράψε την αιτία διαγραφής.');
+        r.deletion={state:'pending',requestedBy:role,requestedAt:Date.now(),reason:note}; audit(r,role,'Αίτημα διαγραφής',note);
+      } else if(action==='deletion.approve'||action==='deletion.reject'||action==='deletion.direct') {
+        assert(role==='md','Η διαγραφή απαιτεί έγκριση του Διευθύνοντος Συμβούλου.',403);
+        if(action!=='deletion.direct') assert(r.deletion?.state==='pending','Δεν εκκρεμεί αίτημα διαγραφής.',409);
+        else { assert(note,'Γράψε την αιτία διαγραφής.'); assert(r.deletion?.state!=='pending','Επίλεξε έγκριση ή απόρριψη του υπάρχοντος αιτήματος.',409); }
+        const ok=action!=='deletion.reject';
+        r.deletion={...(action==='deletion.direct'?{requestedBy:role,requestedAt:Date.now(),reason:note}:r.deletion),state:ok?'approved':'rejected',decidedBy:'md',decidedAt:Date.now(),decisionNote:note};
+        r.deleted=ok;
+        audit(r,role,ok?'Εγκεκριμένη διαγραφή αίτησης':'Απόρριψη διαγραφής',note||r.deletion.reason);
+      } else audit(r,role,'Εκτύπωση εντύπου');
+      // Approval/deletion and its audit are a single SharePoint item update.
+      await this.store.save('requests',r);
+    } else if(action==='employee.save') {
+      assert(role==='sec'||role==='md','Η επεξεργασία εργαζομένων επιτρέπεται στη γραμματεία και στον Διευθύνοντα Σύμβουλο.',403);
+      const d=body.data||{}, old=d.id?state.emps.find(x=>x.id===d.id):null;
+      if(d.id) assert(old&&body.version===old._etag,'Η καρτέλα άλλαξε. Κάνε ανανέωση.',409);
+      const e={...(old||{}),id:old?.id||randomUUID(),name:clean(d.name,150),site:clean(d.site,100),active:d.active===0?0:1,week:d.week,entitlement:num(d.entitlement),carryIn:num(d.carryIn),schoolEntitlement:num(d.schoolEntitlement),schoolCarryIn:num(d.schoolCarryIn),carryYear:d.carryYear};
+      assert(e.name,'Συμπλήρωσε ονοματεπώνυμο.'); assert([5,6].includes(e.week),'Επίλεξε 5ήμερη ή 6ήμερη εβδομάδα.');
+      assert(Number.isInteger(e.carryYear)&&e.carryYear>=2000&&e.carryYear<=2100,'Συμπλήρωσε έγκυρο έτος για τις ήδη ληφθείσες ημέρες.');
+      await this.store.save('employees',e);
+    } else if(action==='config.save') {
+      assert(role==='md','Μόνο ο Διευθύνων Σύμβουλος αλλάζει τις ρυθμίσεις.',403);
+      const d=body.data||{}; assert([5,6].includes(d.week),'Μη έγκυρη εβδομάδα.');
+      const old=(await this.store.all('config'))[0];
+      assert(!old||body.version===old._etag,'Οι ρυθμίσεις άλλαξαν. Κάνε ανανέωση.',409);
+      await this.store.save('config',{...(old||{}),id:old?.id||'config',company:clean(d.company,150),unit:clean(d.unit,150),supervisor:clean(d.supervisor,150),md:clean(d.md,150),week:d.week});
+    } else throw new UserError('Μη επιτρεπτή ενέργεια.',403);
+    return this.state(role);
+  }); }
+}
+
+return {Service,currentYear,usedDays};})();
+
+function entitlement(e,type){return +(type==="sxoliki"?e.schoolEntitlement:e.entitlement)||0;}
+function usedDays(id,type,year){
+  type=type||"kanoniki";year=year||balanceYear;var e=emp(id);
+  return (e&&e.carryYear===year?(+(type==="sxoliki"?e.schoolCarryIn:e.carryIn)||0):0)+S.reqs.filter(function(r){return r.employeeId===id&&!r.deleted&&r.status==="approved"&&r.type===type&&(r.from||"").slice(0,4)===String(year);}).reduce(function(n,r){return n+(+r.days||0);},0);
+}
+function showLogin(){
+  role=null;sessionRole=null;S={cfg:Object.assign({},DEFAULTS),emps:[],reqs:[],log:[]};
+  $$("dialog[open]").forEach(function(d){d.close();});
+  $("main").inert=true;$("#setup").hidden=false;document.body.style.overflow="hidden";
+  $("#roleLabel").textContent="";$("#userChip").textContent="";
+  ["#reqList","#empBody","#logList","#vBody","#sheet"].forEach(function(s){$(s).innerHTML="";});
+  ["#fReq","#fEmp"].forEach(function(s){$(s).reset();});
+  ["#sCo","#sUnit","#sSup","#sMd"].forEach(function(s){$(s).value='';});
+}
+function applyState(data){
+  role=data.role;S=data;$("main").inert=false;$("#setup").hidden=true;document.body.style.overflow="";
+  if(!$("#balanceYear").value){balanceYear=data.year;$("#balanceYear").value=balanceYear;}
+  render();
+}
+function fail(e){$("#banner").innerHTML='<div class="note" role="alert">'+esc(e.message||e)+'</div>';}
+async function refresh(){applyState(await api('/api/state'));}
+async function mutate(action,data){
+  var result=await api('/api/action',Object.assign({action:action},data));applyState(result);return result;
+}
+async function perform(fn){
+  if(busy)return;busy=true;$("#banner").innerHTML="";
+  document.body.setAttribute('aria-busy','true');
+  try{await fn();}catch(e){fail(e);alert(e.message||"Η ενέργεια δεν ολοκληρώθηκε.");}
+  finally{busy=false;document.body.removeAttribute('aria-busy');}
+}
+
+// Role codes prevent accidental role changes. SharePoint permissions remain authoritative.
+var APP=null,account=null,siteId=null,listIds={},sessionRole=null,roleVersion=null,service=null,store=null;
+var CONF=lsGet('sp',{site:'https://foodwealth.sharepoint.com',tenant:'b461df21-9afc-4b67-b1df-403ef5490e44',client:'1dfc5d63-f3db-4882-bfeb-e592f8d28c2d'}),SCOPES=['https://graph.microsoft.com/Sites.Manage.All'];
+var codeAttempts=0,codeBlockedUntil=0;
+async function token(){
+  try{return (await APP.acquireTokenSilent({scopes:SCOPES,account:account})).accessToken;}
+  catch(e){await APP.acquireTokenRedirect({scopes:SCOPES,account:account});throw new Error('Γίνεται ανανέωση της σύνδεσης Microsoft…');}
+}
+async function graph(path,method,body,etag){
+  var url=new URL(path.startsWith('https:')?path:'https://graph.microsoft.com/v1.0'+path);
+  if(url.origin!=='https://graph.microsoft.com'||!url.pathname.startsWith('/v1.0/sites/'))throw new Error('Μη επιτρεπτή διεύθυνση SharePoint.');
+  var response=await fetch(url,{method:method||'GET',headers:{Authorization:'Bearer '+await token(),'Content-Type':'application/json',...(etag?{'If-Match':etag}:{})},body:body===undefined?undefined:JSON.stringify(body)});
+  if(response.status===412)throw new Error('Η εγγραφή άλλαξε από άλλον χρήστη. Πάτησε Ανανέωση πριν συνεχίσεις.');
+  if(!response.ok)throw new Error('Το SharePoint επέστρεψε σφάλμα '+response.status+'. Η αποθήκευση δεν επιβεβαιώθηκε. Ανανέωσε πριν ξαναδοκιμάσεις.');
+  return response.status===204?null:response.json();
+}
+async function pages(path){var all=[];while(path){var j=await graph(path);all.push(...j.value||[]);path=j['@odata.nextLink'];}return all;}
+class ClientStore {
+  path(kind){return '/sites/'+encodeURIComponent(siteId)+'/lists/'+listIds[kind]+'/items';}
+  async all(kind){
+    var records=(await pages(this.path(kind)+'?$expand=fields&$top=500')).map(function(item){return ShareSchema.decode(kind,item);}).filter(function(o){return o.id;});
+    if(kind==='employees')records.forEach(function(e){if(!e.carryYear)e.carryYear=store.baselineYear;});
+    return records;
+  }
+  async save(kind,o){
+    var fields=ShareSchema.encode(kind,o);
+    if(o._gid){
+      if(!o._etag)throw new Error('Ανανέωσε τα δεδομένα πριν την αποθήκευση.');
+      await graph(this.path(kind)+'/'+encodeURIComponent(o._gid)+'/fields','PATCH',fields,o._etag);
+      return ShareSchema.decode(kind,await graph(this.path(kind)+'/'+encodeURIComponent(o._gid)+'?$expand=fields'));
+    }
+    return ShareSchema.decode(kind,await graph(this.path(kind),'POST',{fields:fields}));
+  }
 }
 async function ensureLists(){
-  var have=await graph("/sites/"+siteId+"/lists?$select=id,name,displayName&$top=400");
-  var byName={}; (have.value||[]).forEach(function(l){ byName[l.name]=l.id; byName[l.displayName]=l.id; });
-  for(var k in LISTS){
-    var def=LISTS[k];
-    if(byName[def.name]){ listIds[k]=byName[def.name]; await ensureColumns(k); continue; }
-    var created=await graph("/sites/"+siteId+"/lists",{method:"POST",body:{
-      displayName:def.name, list:{template:"genericList"}, columns:def.cols}});
-    listIds[k]=created.id;
+  var base='/sites/'+encodeURIComponent(siteId)+'/lists',have=await pages(base+'?$select=id,name,displayName');
+  for(var [key,definition] of Object.entries(ShareSchema.schema)){
+    var list=have.find(function(x){return x.name===definition.name||x.displayName===definition.name;});
+    if(!list)list=await graph(base,'POST',{displayName:definition.name,list:{template:'genericList'},columns:definition.cols});
+    listIds[key]=list.id;
+    var columns=await pages(base+'/'+list.id+'/columns?$select=name');
+    for(var column of definition.cols)if(!columns.some(function(x){return x.name===column.name;}))await graph(base+'/'+list.id+'/columns','POST',column);
   }
 }
-async function ensureColumns(k){
-  var lid=listIds[k];
-  var cur=await graph("/sites/"+siteId+"/lists/"+lid+"/columns?$select=name");
-  var have={}; (cur.value||[]).forEach(function(c){ have[c.name]=1; });
-  var want=LISTS[k].cols;
-  for(var i=0;i<want.length;i++){
-    if(have[want[i].name]) continue;
-    try{ await graph("/sites/"+siteId+"/lists/"+lid+"/columns",{method:"POST",body:want[i]}); }catch(e){}
-  }
+async function getConfig(){return (await store.all('config'))[0];}
+async function deriveCode(code,salt){
+  var key=await crypto.subtle.importKey('raw',new TextEncoder().encode(code),'PBKDF2',false,['deriveBits']);
+  var bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new Uint8Array(salt),iterations:210000,hash:'SHA-256'},key,256);
+  return Array.from(new Uint8Array(bits)).map(function(n){return n.toString(16).padStart(2,'0');}).join('');
 }
-async function readList(k){
-  var out=[], url="/sites/"+siteId+"/lists/"+listIds[k]+"/items?expand=fields&$top=500", g=0;
-  while(url && g++<25){
-    var j=await graph(url);
-    (j.value||[]).forEach(function(it){ out.push(MAP[k].in(it.fields||{},it.id)); });
-    url=j["@odata.nextLink"]||null;
-  }
-  return out.filter(function(x){return x.id;});
+async function makeCode(code){var salt=Array.from(crypto.getRandomValues(new Uint8Array(16)));return {salt:salt,hash:await deriveCode(code,salt)};}
+async function checkCode(code,saved){return !!(saved&&saved.salt&&saved.hash&&saved.hash===await deriveCode(code,saved.salt));}
+async function newCodes(){
+  var values=['sec','sup','md'].map(function(r){return $('#newCode-'+r).value;});
+  if(values.some(function(v){return v.length<6||v.length>128;})||new Set(values).size!==3)throw new Error('Όρισε τρεις διαφορετικούς κωδικούς, από 6 έως 128 χαρακτήρες.');
+  for(var [i,r] of ['sec','sup','md'].entries())if(values[i]!==$('#repeatCode-'+r).value)throw new Error('Η επανάληψη κωδικού για '+ROLES[r]+' δεν συμφωνεί.');
+  var result={};for(var [i,r] of ['sec','sup','md'].entries())result[r]=await makeCode(values[i]);return result;
 }
-async function upsert(k,obj){
-  var fields=MAP[k].out(obj);
-  if(obj._gid){
-    await graph("/sites/"+siteId+"/lists/"+listIds[k]+"/items/"+obj._gid+"/fields",{method:"PATCH",body:fields});
-    return obj._gid;
-  }
-  var r=await graph("/sites/"+siteId+"/lists/"+listIds[k]+"/items",{method:"POST",body:{fields:fields}});
-  return r.id;
+function clearCodes(){['sec','sup','md'].forEach(function(r){$('#newCode-'+r).value='';$('#repeatCode-'+r).value='';});$('#currentMdCode').value='';}
+async function verifySession(){
+  if(!sessionRole)throw new Error('Συνδέσου πρώτα με τον κωδικό του ρόλου σου.');
+  var cfg=await getConfig();
+  if(JSON.stringify(cfg.roleCodes)!==roleVersion){sessionRole=null;showLogin();throw new Error('Οι κωδικοί άλλαξαν. Συνδέσου ξανά.');}
+  store.baselineYear=cfg.carryBaselineYear||Domain.currentYear();
 }
-
-/* ── ρυθμίσεις ── */
-async function loadCfg(){
-  var j=await graph("/sites/"+siteId+"/lists/"+listIds.config+"/items?expand=fields&$top=5");
-  var it=(j.value||[])[0];
-  if(it){ var f=it.fields||{}; S.cfgGid=it.id;
-    S.cfg={company:f.Company||DEFAULTS.company,unit:f.Unit||"",supervisor:f.Supervisor||"",
-      md:f.MdName||DEFAULTS.md,week:+f.WeekDays||6};
-  }else{
-    var r=await graph("/sites/"+siteId+"/lists/"+listIds.config+"/items",{method:"POST",body:{fields:{
-      Title:"config",Key:"config",Company:S.cfg.company,Unit:S.cfg.unit,
-      Supervisor:S.cfg.supervisor,MdName:S.cfg.md,WeekDays:S.cfg.week}}});
-    S.cfgGid=r.id;
-  }
-}
-async function saveCfg(){
-  try{
-    await graph("/sites/"+siteId+"/lists/"+listIds.config+"/items/"+S.cfgGid+"/fields",{method:"PATCH",body:{
-      Company:S.cfg.company,Unit:S.cfg.unit,Supervisor:S.cfg.supervisor,MdName:S.cfg.md,WeekDays:S.cfg.week}});
-    render();
-  }catch(e){ fail(e); }
-}
-
-/* ── store API ── */
-function bag(c){ return c==="requests"?S.reqs : c==="employees"?S.emps : S.log; }
-async function put(coll,obj){
-  try{
-    obj._gid=await upsert(coll,obj);
-    var arr=bag(coll), i=arr.findIndex(function(x){return x.id===obj.id;});
-    if(i>=0) arr[i]=obj; else arr.push(obj);
-    render();
-  }catch(e){ fail(e); }
-}
-async function del(coll,id){
-  try{
-    var o=bag(coll).find(function(x){return x.id===id;});
-    if(o&&o._gid) await graph("/sites/"+siteId+"/lists/"+listIds[coll]+"/items/"+o._gid,{method:"DELETE"});
-    if(coll==="requests") S.reqs=S.reqs.filter(function(x){return x.id!==id;});
-    else if(coll==="employees") S.emps=S.emps.filter(function(x){return x.id!==id;});
-    else S.log=S.log.filter(function(x){return x.id!==id;});
-    render();
-  }catch(e){ fail(e); }
-}
-function logIt(req,action,detail,kind){
-  return put("log",{id:uid(),ts:Date.now(),protocol:req?req.protocol:"—",
-    who:ROLES[role],person:req?req.employeeName:"",action:action,detail:detail||"",kind:kind||""});
-}
-function fail(e){
-  $("#banner").innerHTML='<div class="note">Το SharePoint απάντησε με σφάλμα: '+esc(e.message||e)+
-    ' — ανανέωσε τη σελίδα και δοκίμασε ξανά.</div>';
-}
-
-/* ── οθόνη ρύθμισης / σύνδεση ── */
-function setStage(t){
-  var el=$("#stage"); if(!el) return;
-  if(t===null){ el.hidden=true; return; }
-  el.hidden=false; el.textContent=t;
-}
-function showSetup(){
-  $("#setup").hidden=false; document.body.style.overflow="hidden"; $("#setupForm").hidden=false;
-  if(CONF){ $("#cTenant").value=CONF.tenant||""; $("#cClient").value=CONF.client||""; $("#cSite").value=CONF.site||""; }
-  $("#redirUri").textContent=location.origin+location.pathname;
-}
-function hideSetup(){ $("#setup").hidden=true; document.body.style.overflow=""; }
-
-async function boot(){
-  if(!CONF||!CONF.tenant||!CONF.client||!CONF.site){ showSetup(); return; }
-  $("#setup").hidden=false; document.body.style.overflow="hidden";
-  $("#setupForm").hidden=true; setStage("Σύνδεση με τον εταιρικό σου λογαριασμό…");
-  try{
-    if(location.protocol==="file:")
-      throw new Error("Η σελίδα είναι ανοιχτή απευθείας από τον δίσκο (file://). Η σύνδεση Microsoft δουλεύει μόνο μέσω http ή https — δες τις οδηγίες για τοπική δοκιμή με localhost.");
-    if(typeof msal==="undefined")
-      throw new Error("Δεν φόρτωσε η βιβλιοθήκη σύνδεσης της Microsoft. Πιθανόν το δίκτυο μπλοκάρει τα cdn.jsdelivr.net και alcdn.msauth.net — ζήτα από το IT να τα επιτρέψει.");
-    APP=new msal.PublicClientApplication({
-      auth:{clientId:CONF.client, authority:"https://login.microsoftonline.com/"+CONF.tenant,
-            redirectUri:location.origin+location.pathname},
-      cache:{cacheLocation:"localStorage"}});
-    await APP.initialize();
-    var resp=await APP.handleRedirectPromise();
-    var accs=APP.getAllAccounts();
-    if(resp&&resp.account) account=resp.account;
-    else if(accs.length) account=accs[0];
-    else { setStage("Ανακατεύθυνση στη σελίδα σύνδεσης της Microsoft…");
-           await APP.loginRedirect({scopes:SCOPES}); return; }
-    APP.setActiveAccount(account);
-
-    setStage("Άνοιγμα του χώρου SharePoint…");   await resolveSite();
-    setStage("Έλεγχος λιστών…");                 await ensureLists();
-    setStage("Φόρτωση ρυθμίσεων…");              await loadCfg();
-    setStage("Φόρτωση δεδομένων…");
-    S.emps=await readList("employees");
-    S.reqs=await readList("requests");
-    S.log =await readList("log");
-    if(!S.emps.length){
-      setStage("Πρώτη εγκατάσταση — καταχώρηση εργαζομένων…");
-      for(var i=0;i<SEED_EMP.length;i++){
-        var o={id:uid(),name:SEED_EMP[i][0],site:SEED_EMP[i][1],entitlement:20,active:1,
-               week:SEED_EMP[i][2]||6,carryIn:0};
-        o._gid=await upsert("employees",o); S.emps.push(o);
-      }
+async function api(path,body){
+  if(path==='/api/logout'){sessionRole=null;roleVersion=null;return {};}
+  if(!service)throw new Error('Συνδέσου πρώτα στο Microsoft SharePoint.');
+  if(path==='/api/login'){
+    if(Date.now()<codeBlockedUntil)throw new Error('Περίμενε ένα λεπτό πριν ξαναδοκιμάσεις.');
+    var cfg=await getConfig();
+    if(!ROLES[body.role]||!await checkCode(body.password,cfg.roleCodes[body.role])){
+      if(++codeAttempts>=5){codeAttempts=0;codeBlockedUntil=Date.now()+60000;}
+      throw new Error('Ο κωδικός δεν αντιστοιχεί στον επιλεγμένο ρόλο.');
     }
-    hideSetup();
-    $("#userChip").textContent=account.name||account.username||"";
-    role=lsGet("role","sec"); $("#roleSel").value=role;
-    render();
-  }catch(e){
-    setStage(null); $("#setupForm").hidden=false;
-    $("#setupErr").innerHTML='<div class="note">Δεν ολοκληρώθηκε η σύνδεση: '+esc(e.message||e)+'</div>';
-    showSetup();
+    codeAttempts=0;sessionRole=body.role;roleVersion=JSON.stringify(cfg.roleCodes);return {role:sessionRole};
   }
+  await verifySession();
+  if(path==='/api/state')return service.state(sessionRole);
+  if(path==='/api/action')return service.execute(sessionRole,body);
+  throw new Error('Άγνωστη ενέργεια.');
 }
+async function openCodes(initial){
+  clearCodes();$('#codesInitial').hidden=!initial;$('#codesCurrent').hidden=initial;
+  $('#carryBaselineYear').value=store.baselineYear||Domain.currentYear();
+  $('#codesTitle').textContent=initial?'Πρώτη ρύθμιση από τον Διευθύνοντα Σύμβουλο':'Αλλαγή κωδικών ρόλων';
+  $('#codesError').textContent='';$('#dCodes').dataset.initial=String(initial);$('#dCodes').showModal();
+}
+async function boot(){
+  showLogin();$('#fLogin').hidden=true;$('#spForm').hidden=false;$('#setupErr').textContent='';
+  if(!CONF){return;}
+  $('#cSite').value=CONF.site||'';$('#cTenant').value=CONF.tenant||'';$('#cClient').value=CONF.client||'';
+  $('#setupErr').textContent='Σύνδεση με Microsoft και φόρτωση SharePoint…';
+  try{
+    if(location.protocol==='file:')throw new Error('Άνοιξε την εφαρμογή από τη διεύθυνση GitHub Pages. Η σύνδεση Microsoft δεν λειτουργεί ανοίγοντας το αρχείο από τον δίσκο.');
+    if(typeof msal==='undefined')throw new Error('Δεν φορτώθηκε η σύνδεση Microsoft. Ανανέωσε τη σελίδα.');
+    APP=new msal.PublicClientApplication({auth:{clientId:CONF.client,authority:'https://login.microsoftonline.com/'+CONF.tenant,redirectUri:location.origin+location.pathname},cache:{cacheLocation:'localStorage'}});
+    await APP.initialize();var response=await APP.handleRedirectPromise();account=response?.account||APP.getAllAccounts()[0];
+    if(!account){await APP.loginRedirect({scopes:SCOPES});return;}
+    APP.setActiveAccount(account);
+    var url=new URL(CONF.site),site=await graph('/sites/'+url.hostname+':'+(url.pathname.replace(/\/+$/,'')||'/'));
+    siteId=site.id;await ensureLists();store=new ClientStore();service=new Domain.Service(store);
+    var cfg=await getConfig();
+    if(!cfg)cfg=await store.save('config',{id:'config',...DEFAULTS,roleCodes:{},carryBaselineYear:Domain.currentYear()});
+    store.baselineYear=cfg.carryBaselineYear||Domain.currentYear();
+    $('#spForm').hidden=true;$('#fLogin').hidden=false;$('#setupErr').textContent='';$('#bInitialCodes').hidden=!!cfg.roleCodes?.md;
+    if(!cfg.roleCodes?.md)await openCodes(true);
+  }catch(e){$('#setupErr').textContent=e.message;$('#spForm').hidden=false;}
+}
+$('#bConnect').addEventListener('click',function(){
+  try{
+    var site=new URL($('#cSite').value.trim());
+    if(site.protocol!=='https:'||!site.hostname.endsWith('.sharepoint.com'))throw new Error('Συμπλήρωσε τη διεύθυνση https του εταιρικού SharePoint.');
+    var tenant=$('#cTenant').value.trim(),client=$('#cClient').value.trim(),guid=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
+    if(!guid.test(tenant)||!guid.test(client))throw new Error('Τα Tenant ID και Client ID πρέπει να είναι έγκυρα αναγνωριστικά Microsoft.');
+    CONF={site:site.href.replace(/\/$/,''),tenant:tenant,client:client};lsSet('sp',CONF);boot();
+  }catch(e){$('#setupErr').textContent=e.message;}
+});
+$('#bCodes').addEventListener('click',function(){if(role==='md')openCodes(false);});
+$('#bInitialCodes').addEventListener('click',async function(){if(store&&!(await getConfig()).roleCodes?.md)openCodes(true);});
+$('#fCodes').addEventListener('submit',async function(ev){
+  ev.preventDefault();var button=this.querySelector('[type=submit]');button.disabled=true;$('#codesError').textContent='';
+  try{
+    var cfg=await getConfig(),first=!cfg.roleCodes?.md;
+    if(!first&&(sessionRole!=='md'||!await checkCode($('#currentMdCode').value,cfg.roleCodes.md)))throw new Error('Χρειάζεται ο τρέχων κωδικός του Διευθύνοντος Συμβούλου.');
+    var codes=await newCodes(),year=+$('#carryBaselineYear').value;
+    if(first&&(!Number.isInteger(year)||year<2000||year>2100))throw new Error('Συμπλήρωσε έγκυρο έτος για τις παλιές ληφθείσες ημέρες.');
+    var latest=await getConfig();if(latest._etag!==cfg._etag)throw new Error('Οι ρυθμίσεις άλλαξαν. Κλείσε και δοκίμασε ξανά.');
+    cfg.roleCodes=codes;if(first)cfg.carryBaselineYear=year;
+    await store.save('config',cfg);clearCodes();$('#dCodes').close();
+    sessionRole=null;roleVersion=null;showLogin();$('#bInitialCodes').hidden=true;$('#setupErr').textContent='Οι κωδικοί αποθηκεύτηκαν. Επίλεξε ρόλο και συνδέσου.';
+  }catch(e){$('#codesError').textContent=e.message;}finally{button.disabled=false;}
+});
+$('#schoolImport').addEventListener('change',function(){var file=this.files[0];this.value='';if(!file)return;perform(async function(){
+  await verifySession();if(sessionRole!=='md')throw new Error('Η εισαγωγή γίνεται από τον Διευθύνοντα Σύμβουλο.');
+  if(file.size>10000)throw new Error('Μη έγκυρο αρχείο.');
+  var list=JSON.parse(await file.text());if(!Array.isArray(list)||list.length>20)throw new Error('Μη έγκυρο αρχείο δικαιωμάτων.');
+  var employees=await store.all('employees'),normalize=function(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();};
+  var plan=list.map(function(a){
+    var matches=employees.filter(function(e){return a.employeeId?e.id===a.employeeId:(a.names||[]).some(function(n){return normalize(e.name).split(/[\s,.-]+/).includes(normalize(n));});});
+    if(matches.length!==1)throw new Error('Δεν βρέθηκε μοναδική αντιστοίχιση για '+String(a.label||'εργαζόμενο')+'. Ρύθμισε τις ημέρες από την καρτέλα Εργαζόμενοι.');
+    if(!Number.isFinite(a.days)||a.days<0||a.days>366)throw new Error('Μη έγκυρες ημέρες.');
+    return {employee:matches[0],days:a.days};
+  });
+  if(new Set(plan.map(function(p){return p.employee.id;})).size!==plan.length)throw new Error('Διπλή αντιστοίχιση εργαζομένου.');
+  if(await ask('Αποθήκευση σχολικών δικαιωμάτων: '+plan.map(function(p){return p.employee.name+': '+p.days+' ημέρες';}).join(' · ')+';',false,false,'Αποθήκευση δικαιωμάτων')===null)return;
+  for(var p of plan){await mutate('employee.save',{version:p.employee._etag,data:{...p.employee,schoolEntitlement:p.days}});}
+  $('#banner').innerHTML='<div class="note">Τα σχολικά δικαιώματα αποθηκεύτηκαν.</div>';
+});});
 
-
-/* ───────── υπολογισμοί ───────── */
-function usedDays(empId){
-  var e0=S.emps.find(function(x){return x.id===empId;});
-  return (e0?(+e0.carryIn||0):0) + S.reqs.filter(function(r){
-    return r.employeeId===empId && r.status==="approved" && TYPES[r.type] && TYPES[r.type].counts &&
-      (r.from||"").slice(0,4)===String(new Date().getFullYear());
-  }).reduce(function(a,r){return a+(+r.days||0);},0);
-}
-function nextProtocol(){
-  var y=new Date().getFullYear();
-  var n=S.reqs.filter(function(r){return (r.protocol||"").indexOf("ΑΔ-"+y)===0;}).length+1;
-  return "ΑΔ-"+y+"-"+("000"+n).slice(-4);
-}
 function emp(id){ return S.emps.find(function(e){return e.id===id;}) || null; }
 
 /* ───────── render ───────── */
 function render(){
   $("#coLabel").textContent = S.cfg.unit || S.cfg.company;
   var pend = S.reqs.filter(function(r){
+    if(r.deleted) return false;
+    if(role==="md" && r.deletion && r.deletion.state==="pending") return true;
     return (role==="sup"&&r.status==="pending_sup") || (role==="md"&&r.status==="pending_md");
   }).length;
   var cp=$("#cPend"); cp.hidden = pend===0; cp.textContent = pend;
+  $("#roleLabel").textContent=ROLES[role]||"";
+  $("#userChip").textContent="";
+  $("#bNewEmp").hidden=role==="sup";
+  $("#bSaveSet").hidden=role!=="md";
+  $("#roleSettings").hidden=role!=="md";
+  ["#sCo","#sUnit","#sSup","#sMd","#sWeek"].forEach(function(s){$(s).disabled=role!=="md";});
   renderFilters(); renderReqs(); renderEmps(); renderLog(); renderSet();
 }
 
 function counts(){
-  var c={all:S.reqs.length,pending_sup:0,pending_md:0,approved:0,rejected:0};
-  S.reqs.forEach(function(r){ if(c[r.status]!=null) c[r.status]++; });
-  return c;
+  var c={all:0,pending_sup:0,pending_md:0,approved:0,rejected:0,deletion:0,deleted:0};
+  S.reqs.forEach(function(r){ if(r.deleted){c.deleted++;return;} c.all++; if(c[r.status]!=null)c[r.status]++; if(r.deletion&&r.deletion.state==="pending")c.deletion++; }); return c;
 }
 function renderFilters(){
-  var c=counts();
-  var defs=[["all","Όλες"],["pending_sup","Αναμονή προϊσταμένου"],["pending_md","Αναμονή τελικής"],
-            ["approved","Εγκεκριμένες"],["rejected","Απορριφθείσες"]];
-  $("#filters").innerHTML = defs.map(function(d){
-    return '<button class="chip" data-f="'+d[0]+'" aria-pressed="'+(filter===d[0])+'">'+d[1]+'<b>'+(c[d[0]]||0)+'</b></button>';
-  }).join("");
+  var c=counts(),defs=[["all","Ενεργές"],["pending_sup","Αναμονή προϊσταμένου"],["pending_md","Αναμονή τελικής"],["approved","Εγκεκριμένες"],["rejected","Απορριφθείσες"],["deletion","Αιτήματα διαγραφής"],["deleted","Διαγραμμένες"]];
+  $("#filters").innerHTML=defs.map(function(d){return '<button class="chip" data-f="'+d[0]+'" aria-pressed="'+(filter===d[0])+'">'+d[1]+'<b>'+c[d[0]]+'</b></button>';}).join("");
 }
 
 function renderReqs(){
   var rows = S.reqs.slice().sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
-  if(filter!=="all") rows=rows.filter(function(r){return r.status===filter;});
+  rows=rows.filter(function(r){ if(filter==="deleted")return r.deleted; if(r.deleted)return false; if(filter==="deletion")return r.deletion&&r.deletion.state==="pending"; return filter==="all"||r.status===filter; });
   var el=$("#reqList");
   if(!rows.length){
     el.innerHTML='<div class="empty"><h3>Καμία αίτηση εδώ</h3><p>'+
@@ -850,43 +927,32 @@ function renderReqs(){
   el.innerHTML = rows.map(function(r){
     var st=STATUS[r.status]||STATUS.pending_sup, t=TYPES[r.type]||{short:r.type};
     var acts=[];
-    if(role==="sup"&&r.status==="pending_sup"){
-      acts.push('<button class="btn sm ok" data-act="approve" data-id="'+r.id+'">Έγκριση</button>');
-      acts.push('<button class="btn sm bad" data-act="reject" data-id="'+r.id+'">Απόρριψη</button>');
-    } else if(role==="md"&&r.status==="pending_md"){
-      acts.push('<button class="btn sm ok" data-act="approve" data-id="'+r.id+'">Τελική έγκριση</button>');
-      acts.push('<button class="btn sm bad" data-act="reject" data-id="'+r.id+'">Απόρριψη</button>');
+    if(!r.deleted&&!(r.deletion&&r.deletion.state==="pending")&&role==="sup"&&r.status==="pending_sup"){
+      acts.push('<button class="btn sm ok" data-act="approve" data-id="'+esc(r.id)+'">Έγκριση</button>');
+      acts.push('<button class="btn sm bad" data-act="reject" data-id="'+esc(r.id)+'">Απόρριψη</button>');
+    } else if(!r.deleted&&!(r.deletion&&r.deletion.state==="pending")&&role==="md"&&r.status==="pending_md"){
+      acts.push('<button class="btn sm ok" data-act="approve" data-id="'+esc(r.id)+'">Τελική έγκριση</button>');
+      acts.push('<button class="btn sm bad" data-act="reject" data-id="'+esc(r.id)+'">Απόρριψη</button>');
     }
-    if(r.status==="approved"||r.status==="rejected")
-      acts.push('<button class="btn sm" data-act="print" data-id="'+r.id+'">Εκτύπωση</button>');
-    acts.push('<button class="btn sm" data-act="view" data-id="'+r.id+'">Καρτέλα</button>');
+    if(!r.deleted&&(r.status==="approved"||r.status==="rejected"))
+      acts.push('<button class="btn sm" data-act="print" data-id="'+esc(r.id)+'">Εκτύπωση</button>');
+    acts.push('<button class="btn sm" data-act="view" data-id="'+esc(r.id)+'">Καρτέλα</button>');
     return '<div class="row s-'+st.c+'">'+
       '<div class="proto">'+esc(r.protocol)+'</div>'+
       '<div class="who">'+esc(r.employeeName)+'<small>'+esc(r.site||"")+'</small></div>'+
       '<div class="kind">'+esc(t.short)+'</div>'+
       '<div class="dates">'+gr(r.from)+' – '+gr(r.to)+'</div>'+
       '<div class="days">'+(+r.days||0)+'<small>ημ.</small></div>'+
-      '<div><span class="status st-'+st.c+'">'+st.l+'</span></div>'+
+      '<div><span class="status st-'+st.c+'">'+(r.deleted?'Διαγραμμένη':st.l)+'</span>'+(r.deletion&&r.deletion.state==='pending'?'<br><span class="status st-md">Αίτημα διαγραφής</span>':'')+'</div>'+
       '<div class="acts">'+acts.join("")+'</div></div>';
   }).join("");
 }
 
 function renderEmps(){
-  var y=new Date().getFullYear();
-  $("#empBody").innerHTML = S.emps.slice().sort(function(a,b){
-    return (a.site||"").localeCompare(b.site||"","el") || (a.name||"").localeCompare(b.name||"","el");
-  }).map(function(e){
-    var ent=+e.entitlement||0, used=usedDays(e.id), left=Math.max(0,ent-used);
-    var pct = ent>0 ? Math.round(left/ent*100) : 0;
-    return '<tr'+(e.active==0?' style="opacity:.5"':'')+'>'+
-      '<td><strong>'+esc(e.name)+'</strong>'+(e.active==0?' <span class="status st-no">ανενεργός</span>':'')+'</td>'+
-      '<td>'+esc(e.site||"—")+'</td>'+
-      '<td>'+((+e.week||6)===5?"5ήμερη":"6ήμερη")+'</td>'+
-      '<td class="num">'+ent+'</td><td class="num">'+used+'</td>'+
-      '<td><strong style="font-family:\'Fira Mono\',monospace">'+left+'</strong> <span style="color:var(--muted);font-size:12px">από '+ent+' ('+y+')</span>'+
-        '<div class="bar"><i class="'+(pct<20?"low":"")+'" style="width:'+pct+'%"></i></div></td>'+
-      '<td style="text-align:right"><button class="btn sm" data-emp="'+e.id+'">Επεξεργασία</button></td></tr>';
-  }).join("") || '<tr><td colspan="7" class="empty">Κανένας εργαζόμενος. Πάτησε «Προσθήκη εργαζόμενου».</td></tr>';
+  $("#empBody").innerHTML=S.emps.slice().sort(function(a,b){return (a.name||"").localeCompare(b.name||"","el");}).map(function(e){
+    var a=+e.entitlement||0,s=+e.schoolEntitlement||0,au=usedDays(e.id,"kanoniki"),su=usedDays(e.id,"sxoliki");
+    return '<tr'+(e.active==0?' style="opacity:.5"':'')+'><td><strong>'+esc(e.name)+'</strong>'+(e.active==0?' (ανενεργός)':'')+'</td><td>'+esc(e.site)+'</td><td>'+e.week+'ήμερη</td><td>'+a+' / '+au+' / <strong>'+(a-au)+'</strong></td><td>'+s+' / '+su+' / <strong>'+(s-su)+'</strong></td><td><strong>'+(a+s)+'</strong> / '+(a+s-au-su)+'</td><td>'+(role!=="sup"?'<button class="btn sm" data-emp="'+esc(e.id)+'">Επεξεργασία</button>':'')+'</td></tr>';
+  }).join("")||'<tr><td colspan="7">Δεν υπάρχουν εργαζόμενοι.</td></tr>';
 }
 
 function renderLog(){
@@ -908,18 +974,18 @@ function renderSet(){
 /* ───────── καρτέλα αίτησης ───────── */
 function openView(id){
   var r=S.reqs.find(function(x){return x.id===id;}); if(!r) return;
-  viewId=id;
-  var st=STATUS[r.status], t=TYPES[r.type]||{l:r.type}, e=emp(r.employeeId);
+
+  var st=STATUS[r.status]||STATUS.pending_sup, t=TYPES[r.type]||{l:r.type}, e=emp(r.employeeId);
   $("#vTitle").textContent="Αίτηση "+r.protocol;
   var h='<dl class="dl">'+
     '<dt>Εργαζόμενος</dt><dd><strong>'+esc(r.employeeName)+'</strong> · '+esc(r.site||"—")+'</dd>'+
     '<dt>Είδος</dt><dd>'+esc(t.l)+'</dd>'+
     '<dt>Διάστημα</dt><dd>'+gr(r.from)+' έως '+gr(r.to)+' · <strong>'+(+r.days||0)+'</strong> εργάσιμες ημέρες</dd>'+
-    '<dt>Κατάσταση</dt><dd><span class="status st-'+st.c+'">'+st.l+'</span></dd>'+
+    '<dt>Κατάσταση</dt><dd><span class="status st-'+st.c+'">'+(r.deleted?'Διαγραμμένη':st.l)+'</span></dd>'+
     (r.paperDate?'<dt>Γραπτή αίτηση</dt><dd>'+gr(r.paperDate)+'</dd>':'')+
     (r.cert?'<dt>Δικαιολογητικό</dt><dd>'+esc(r.cert)+'</dd>':'')+
     (r.reason?'<dt>Αιτιολογία</dt><dd>'+esc(r.reason)+'</dd>':'')+
-    (e&&TYPES[r.type]&&TYPES[r.type].counts?'<dt>Υπόλοιπο</dt><dd>'+Math.max(0,(+e.entitlement||0)-usedDays(e.id))+' από '+(+e.entitlement||0)+' ημέρες</dd>':'')+
+    (e&&TYPES[r.type]&&TYPES[r.type].counts?'<dt>Υπόλοιπο</dt><dd>'+(entitlement(e,r.type)-usedDays(e.id,r.type,+r.from.slice(0,4)))+' από '+entitlement(e,r.type)+' ημέρες</dd>':'')+
     '<dt>Καταχώρηση</dt><dd>'+grt(r.createdAt)+' · '+esc(r.createdBy||"")+'</dd>'+
   '</dl>';
   if(r.sup) h+='<div class="dec"><h4>Απόφαση προϊσταμένου</h4>'+
@@ -930,38 +996,29 @@ function openView(id){
     '<span class="status st-'+(r.md.ok?"ok":"no")+'">'+(r.md.ok?"Εγκρίθηκε":"Απορρίφθηκε")+'</span> '+
     '<span style="color:var(--muted);font-size:13px">'+grt(r.md.at)+' · '+esc(r.md.by||"")+'</span>'+
     (r.md.note?'<p style="margin:8px 0 0">'+esc(r.md.note)+'</p>':'')+'</div>';
+  if(r.deletion)h+='<div class="dec"><h4>'+(r.deleted?'Διαγραφή με έγκριση Διευθύνοντος Συμβούλου':r.deletion.state==='pending'?'Εκκρεμεί έγκριση διαγραφής':'Απορρίφθηκε το αίτημα διαγραφής')+'</h4><p>'+esc(r.deletion.reason)+'</p><p>'+esc(ROLES[r.deletion.requestedBy])+' · '+grt(r.deletion.requestedAt)+'</p>'+(r.deletion.decisionNote?'<p>'+esc(r.deletion.decisionNote)+'</p>':'')+'</div>';
   $("#vBody").innerHTML=h;
 
   var f=[];
-  if(r.status==="approved"||r.status==="rejected")
-    f.push('<button class="btn pri" data-act="print" data-id="'+r.id+'">Εκτύπωση εντύπου</button>');
-  if(role==="sec"&&r.status==="pending_sup")
-    f.push('<button class="btn bad" data-act="delete" data-id="'+r.id+'" style="margin-right:auto">Διαγραφή</button>');
+  if(!r.deleted&&(r.status==="approved"||r.status==="rejected"))
+    f.push('<button class="btn pri" data-act="print" data-id="'+esc(r.id)+'">Εκτύπωση εντύπου</button>');
+  if(!r.deleted){
+    if(r.deletion&&r.deletion.state==="pending"){
+      if(role==="md"){
+        f.push('<button class="btn bad" data-act="deletion.approve" data-id="'+esc(r.id)+'">Έγκριση διαγραφής</button>');
+        f.push('<button class="btn" data-act="deletion.reject" data-id="'+esc(r.id)+'">Απόρριψη διαγραφής</button>');
+      }
+    } else f.push('<button class="btn bad" data-act="'+(role==="md"?'deletion.direct':'deletion.request')+'" data-id="'+esc(r.id)+'">'+(role==="md"?'Διαγραφή':'Αίτημα διαγραφής')+'</button>');
+  }
   f.push('<button class="btn" data-close>Κλείσιμο</button>');
   $("#vFoot").innerHTML=f.join("");
-  $("#dView").showModal();
-}
-
-/* ───────── αποφάσεις ───────── */
-async function decide(id,ok){
-  var r=S.reqs.find(function(x){return x.id===id;}); if(!r) return;
-  var stage = r.status==="pending_sup" ? "sup" : "md";
-  var who = stage==="sup" ? (S.cfg.supervisor||"Προϊστάμενος") : (S.cfg.md||"Διευθύνων Σύμβουλος");
-  var note = prompt((ok?"Έγκριση":"Απόρριψη")+" αίτησης "+r.protocol+"\nΠαρατηρήσεις (προαιρετικά):","");
-  if(note===null) return;
-  r[stage]={ok:ok, at:Date.now(), by:who, note:note};
-  r.status = !ok ? "rejected" : (stage==="sup" ? "pending_md" : "approved");
-  await put("requests",r);
-  await logIt(r,
-    (stage==="sup"?"Απόφαση προϊσταμένου: ":"Τελική απόφαση: ")+(ok?"έγκριση":"απόρριψη"),
-    note||"", ok?"ok":"no");
-  if($("#dView").open) openView(id);
+  if(!$("#dView").open) $("#dView").showModal();
 }
 
 /* ───────── επίσημο έντυπο ───────── */
 function buildSheet(r){
   var t=TYPES[r.type]||{l:r.type}, e=emp(r.employeeId);
-  var ent=e?+e.entitlement||0:0, used=e?usedDays(e.id):0;
+  var ent=e?entitlement(e,r.type):0, used=e?usedDays(e.id,r.type,+r.from.slice(0,4)):0;
   var cb=function(on,txt){return '<span class="cb"><i class="'+(on?"on":"")+'"></i>'+txt+'</span>';};
   var stage=function(d,title,name){
     if(!d) return '<section><h2>'+title+'</h2><div class="verdict">'+cb(false,"ΕΓΚΡΙΝΕΤΑΙ")+cb(false,"ΑΠΟΡΡΙΠΤΕΤΑΙ")+
@@ -988,7 +1045,7 @@ function buildSheet(r){
     '<div class="fld"><u>Από</u><strong>'+gr(r.from)+'</strong></div>'+
     '<div class="fld"><u>Έως και</u><strong>'+gr(r.to)+'</strong></div>'+
     (t.counts?'<div class="fld"><u>Δικαιούμενες ημέρες έτους</u><strong>'+ent+'</strong></div>'+
-     '<div class="fld"><u>Υπόλοιπο μετά τη χορήγηση</u><strong>'+Math.max(0,ent-used)+'</strong></div>':'')+
+     '<div class="fld"><u>Υπόλοιπο μετά τη χορήγηση</u><strong>'+(ent-used)+'</strong></div>':'')+
     (r.cert?'<div class="fld full"><u>Δικαιολογητικό</u><strong>'+esc(r.cert)+'</strong></div>':'')+
     '<div class="fld full" style="border-bottom:0"><u>Αιτιολογία</u><strong>'+(esc(r.reason)||"—")+'</strong></div>'+
   '</div></section>'+
@@ -1002,158 +1059,107 @@ function buildSheet(r){
   '<div class="foot"><span>Αντίγραφο 1: εργαζόμενος &nbsp;·&nbsp; Αντίγραφο 2: αρχείο, συνημμένο στη γραπτή αίτηση</span>'+
   '<span>'+esc(r.protocol)+'</span></div>';
 }
-async function printReq(id){
-  var r=S.reqs.find(function(x){return x.id===id;}); if(!r) return;
-  $("#sheet").innerHTML=buildSheet(r);
-  await logIt(r,"Εκτύπωση εντύπου","");
-  setTimeout(function(){window.print();},60);
-}
-
-/* ───────── συμβάντα ───────── */
-$$("nav.tabs button").forEach(function(b){
-  b.addEventListener("click",function(){
-    $$("nav.tabs button").forEach(function(x){x.setAttribute("aria-selected","false");});
-    b.setAttribute("aria-selected","true");
-    $$(".panel").forEach(function(p){p.classList.remove("on");});
-    $("#p-"+b.dataset.tab).classList.add("on");
+function ask(message,required,showNote,label){
+  return new Promise(function(resolve){
+    var dialog=$("#dAction"),form=$("#fAction"),submitted=false;
+    $("#aTitle").textContent=label||'Επιβεβαίωση';$("#aMessage").textContent=message;
+    $("#aNoteField").hidden=!showNote;$("#aNote").required=!!required;$("#aNote").value='';
+    $("#aSubmit").textContent=label||'Συνέχεια';
+    form.onsubmit=function(ev){ev.preventDefault();if(required&&!$("#aNote").value.trim())return;submitted=true;dialog.close();};
+    dialog.addEventListener('close',function done(){dialog.removeEventListener('close',done);form.onsubmit=null;resolve(submitted?$("#aNote").value.trim():null);});
+    dialog.showModal();
   });
-});
-$("#roleSel").addEventListener("change",function(){ role=this.value; lsSet("role",role); render(); });
-$("#filters").addEventListener("click",function(ev){
-  var b=ev.target.closest("[data-f]"); if(!b) return; filter=b.dataset.f; render();
-});
+}
+async function printReq(id){
+  var r=S.reqs.find(function(x){return x.id===id;});if(!r||r.deleted)return;
+  await mutate('request.print',{id:id,version:r._etag});
+  r=S.reqs.find(function(x){return x.id===id;});$("#sheet").innerHTML=buildSheet(r);window.print();
+}
+$$("nav.tabs button").forEach(function(b){b.addEventListener("click",function(){
+  $$("nav.tabs button").forEach(function(x){x.setAttribute("aria-selected","false");});b.setAttribute("aria-selected","true");
+  $$(".panel").forEach(function(p){p.classList.remove("on");});$("#p-"+b.dataset.tab).classList.add("on");
+});});
+$("#filters").addEventListener("click",function(ev){var b=ev.target.closest("[data-f]");if(b){filter=b.dataset.f;render();}});
+$("#balanceYear").addEventListener('change',function(){var y=+this.value;if(y>=2000&&y<=2100&&Number.isInteger(y)){balanceYear=y;renderEmps();}});
 document.addEventListener("click",function(ev){
-  var c=ev.target.closest("[data-close]");
-  if(c){ var d=c.closest("dialog"); if(d) d.close(); return; }
-  var a=ev.target.closest("[data-act]"); if(a){
-    var id=a.dataset.id, act=a.dataset.act;
-    if(act==="view") openView(id);
-    else if(act==="approve") decide(id,true);
-    else if(act==="reject") decide(id,false);
-    else if(act==="print") printReq(id);
-    else if(act==="delete"){
-      if(confirm("Διαγραφή της αίτησης; Η ενέργεια καταγράφεται στο αρχείο.")){
-        var r=S.reqs.find(function(x){return x.id===id;});
-        logIt(r,"Διαγραφή αίτησης","");
-        del("requests",id); $("#dView").close();
+  var close=ev.target.closest('[data-close]');if(close){close.closest('dialog').close();return;}
+  var a=ev.target.closest('[data-act]');if(a){
+    var id=a.dataset.id,act=a.dataset.act,r=S.reqs.find(function(x){return x.id===id;});if(!r)return;
+    if(act==='view'){openView(id);return;}
+    perform(async function(){
+      if(act==='print'){await printReq(id);return;}
+      var note;
+      if(act==='approve'||act==='reject'){
+        note=await ask((act==='approve'?'Έγκριση':'Απόρριψη')+' αίτησης '+r.protocol+' — παρατηρήσεις προαιρετικές.',false,true,act==='approve'?'Έγκριση':'Απόρριψη');if(note===null)return;
+        await mutate('request.decide',{id:id,version:r._etag,ok:act==='approve',note:note});
+      }else if(act.indexOf('deletion.')===0){
+        if(act==='deletion.approve'){
+          note=await ask('Έγκριση διαγραφής της '+r.protocol+'; Αν είναι εγκεκριμένη, οι ημέρες επιστρέφουν στο αντίστοιχο υπόλοιπο.',false,false,'Έγκριση διαγραφής');if(note===null)return;
+        }else{
+          note=await ask(act==='deletion.reject'?'Απόρριψη αιτήματος διαγραφής '+r.protocol:'Αιτία διαγραφής της '+r.protocol+' (υποχρεωτική).',act!=='deletion.reject',true,act==='deletion.direct'?'Διαγραφή':act==='deletion.reject'?'Απόρριψη διαγραφής':'Αποστολή αιτήματος');if(note===null)return;
+          if(act!=='deletion.reject'&&!note.trim()){alert('Συμπλήρωσε την αιτία διαγραφής.');return;}
+        }
+        await mutate(act,{id:id,version:r._etag,note:note});
       }
-    }
-    return;
+      if($("#dView").open)openView(id);
+    });return;
   }
-  var e=ev.target.closest("[data-emp]"); if(e) openEmp(e.dataset.emp);
+  var e=ev.target.closest('[data-emp]');if(e)openEmp(e.dataset.emp);
 });
-
-/* νέα αίτηση */
 function fillEmpSelect(){
-  $("#rEmp").innerHTML = S.emps.filter(function(e){return e.active!=0;})
-    .sort(function(a,b){return (a.name||"").localeCompare(b.name||"","el");})
-    .map(function(e){return '<option value="'+e.id+'">'+esc(e.name)+' — '+esc(e.site||"")+'</option>';}).join("");
+  $("#rEmp").innerHTML=S.emps.filter(function(e){return e.active!==0;}).sort(function(a,b){return a.name.localeCompare(b.name,'el');}).map(function(e){return '<option value="'+esc(e.id)+'">'+esc(e.name)+' — '+esc(e.site)+'</option>';}).join('');
+}
+function showBalance(){
+  var e=emp($("#rEmp").value),type=$("#rType").value,year=+$("#rFrom").value.slice(0,4)||S.year;
+  var counts=type==='kanoniki'||type==='sxoliki';
+  $("#rBalance").textContent=e&&counts?'Υπόλοιπο '+TYPES[type].short.toLowerCase()+' ('+year+'): '+(entitlement(e,type)-usedDays(e.id,type,year))+' από '+entitlement(e,type)+' ημέρες. Οι ημέρες αφαιρούνται μετά την τελική έγκριση.':'';
 }
 function recalc(){
-  var f=$("#rFrom").value, t=$("#rTo").value;
-  if(!f||!t){ $("#rCalc").hidden=true; return; }
-  var e0=emp($("#rEmp").value), wk=(e0&&+e0.week)||+S.cfg.week||6;
-  var n=workDays(f,t,wk);
-  $("#rDays").value=n;
-  $("#rCalcN").textContent=n;
-  $("#rCalcT").textContent="εργάσιμες ημέρες — "+(wk===5?"5ήμερη, Δευτ.–Παρ.":"6ήμερη, Δευτ.–Σάβ.")+", χωρίς επίσημες αργίες";
-  $("#rCalc").hidden=false;
+  var f=$("#rFrom").value,t=$("#rTo").value,e=emp($("#rEmp").value);showBalance();
+  if(!f||!t){$("#rCalc").hidden=true;return;}
+  var n=workDays(f,t,e?e.week:S.cfg.week);$("#rDays").value=n;$("#rCalcN").textContent=n;
+  $("#rCalcT").textContent='εργάσιμες ημέρες — '+(e?e.week:S.cfg.week)+'ήμερη εβδομάδα, χωρίς επίσημες αργίες';$("#rCalc").hidden=false;
 }
-$("#bNew").addEventListener("click",function(){
-  fillEmpSelect(); $("#fReq").reset(); $("#rCalc").hidden=true;
-  if(!S.emps.length){ alert("Πρόσθεσε πρώτα εργαζόμενους από την καρτέλα «Εργαζόμενοι»."); return; }
-  $("#dReq").showModal();
+$("#bNew").addEventListener('click',function(){
+  $("#fReq").reset();fillEmpSelect();if(!$("#rEmp").value){alert('Πρόσθεσε πρώτα έναν ενεργό εργαζόμενο.');return;}
+  $("#rCalc").hidden=true;showBalance();$("#dReq").showModal();
 });
-$("#rEmp").addEventListener("change",recalc);
-$("#rFrom").addEventListener("change",recalc);
-$("#rTo").addEventListener("change",recalc);
-$("#fReq").addEventListener("submit",async function(ev){
-  ev.preventDefault();
-  var e=emp($("#rEmp").value); if(!e) return;
-  var r={ id:uid(), protocol:nextProtocol(), employeeId:e.id, employeeName:e.name, site:e.site,
-    type:$("#rType").value, from:$("#rFrom").value, to:$("#rTo").value, days:+$("#rDays").value||0,
-    paperDate:$("#rPaper").value||"", cert:$("#rCert").value.trim(), reason:$("#rReason").value.trim(),
-    status:"pending_sup", createdAt:Date.now(), createdBy:ROLES[role] };
-  await put("requests",r);
-  await logIt(r,"Καταχώρηση αίτησης",TYPES[r.type].short+" · "+r.days+" ημ.");
-  $("#dReq").close();
-  filter="all"; render();
-});
-
-/* εργαζόμενοι */
+['#rEmp','#rFrom','#rTo'].forEach(function(s){$(s).addEventListener('change',recalc);});
+$("#rType").addEventListener('change',showBalance);
+$("#fReq").addEventListener('submit',function(ev){ev.preventDefault();perform(async function(){
+  await mutate('request.create',{data:{employeeId:$("#rEmp").value,type:$("#rType").value,from:$("#rFrom").value,to:$("#rTo").value,days:+$("#rDays").value,paperDate:$("#rPaper").value,cert:$("#rCert").value,reason:$("#rReason").value}});
+  $("#dReq").close();filter='all';render();
+});});
 function openEmp(id){
-  editEmp=id?emp(id):null;
-  $("#eTitle").textContent = editEmp?"Επεξεργασία εργαζόμενου":"Νέος εργαζόμενος";
-  $("#eName").value=editEmp?editEmp.name:"";
-  $("#eSite").value=editEmp?(editEmp.site||"Συσκευαστήριο"):"Συσκευαστήριο";
-  $("#eEnt").value=editEmp?(+editEmp.entitlement||0):20;
-  $("#eWeek").value=String(editEmp?(+editEmp.week||6):(+S.cfg.week||6));
-  $("#eUsed").value=editEmp?(+editEmp.carryIn||0):0;
-  $("#eActive").value=editEmp?String(editEmp.active==0?0:1):"1";
-  $("#eDel").style.display=editEmp?"":"none";
+  if(role==='sup')return;editEmp=id?emp(id):null;var e=editEmp||{name:'',site:'Συσκευαστήριο',entitlement:20,week:S.cfg.week,carryIn:0,schoolEntitlement:0,schoolCarryIn:0,carryYear:S.year,active:1};
+  $("#eTitle").textContent=editEmp?'Επεξεργασία εργαζόμενου':'Νέος εργαζόμενος';
+  Object.entries({eName:e.name,eSite:e.site,eEnt:e.entitlement,eWeek:e.week,eUsed:e.carryIn,eSchool:e.schoolEntitlement,eSchoolUsed:e.schoolCarryIn,eCarryYear:e.carryYear||S.year,eActive:e.active}).forEach(function(p){$('#'+p[0]).value=p[1];});
   $("#dEmp").showModal();
 }
-$("#bNewEmp").addEventListener("click",function(){openEmp(null);});
-$("#fEmp").addEventListener("submit",async function(ev){
-  ev.preventDefault();
-  var o = editEmp ? Object.assign({},editEmp) : {id:uid()};
-  o.name=$("#eName").value.trim(); o.site=$("#eSite").value;
-  o.entitlement=+$("#eEnt").value||0; o.active=+$("#eActive").value;
-  o.week=+$("#eWeek").value||6; o.carryIn=+$("#eUsed").value||0;
-  await put("employees",o);
+$("#bNewEmp").addEventListener('click',function(){openEmp(null);});
+$("#fEmp").addEventListener('submit',function(ev){ev.preventDefault();perform(async function(){
+  await mutate('employee.save',{version:editEmp&&editEmp._etag,data:{id:editEmp&&editEmp.id,name:$("#eName").value,site:$("#eSite").value,entitlement:+$("#eEnt").value,week:+$("#eWeek").value,carryIn:+$("#eUsed").value,schoolEntitlement:+$("#eSchool").value,schoolCarryIn:+$("#eSchoolUsed").value,carryYear:+$("#eCarryYear").value,active:+$("#eActive").value}});
   $("#dEmp").close();
+});});
+$("#bSaveSet").addEventListener('click',function(){perform(async function(){
+  await mutate('config.save',{version:S.cfg._etag,data:{company:$("#sCo").value,unit:$("#sUnit").value,supervisor:$("#sSup").value,md:$("#sMd").value,week:+$("#sWeek").value}});
+});});
+$("#bExport").addEventListener('click',function(){
+  var lines=[['Ημερομηνία','Πρωτόκολλο','Εργαζόμενος','Ενέργεια','Από','Λεπτομέρειες']].concat(S.log.slice().sort(function(a,b){return b.ts-a.ts;}).map(function(v){return [grt(v.ts),v.protocol,v.person,v.action,v.who,v.detail];}));
+  var txt='\uFEFF'+lines.map(function(row){return row.map(function(x){var v=String(x||'');if(/^[=+@\-\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}).join(';');}).join('\r\n');
+  var url=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='arxeio-adeion.csv';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
 });
-$("#eDel").addEventListener("click",async function(){
-  if(!editEmp) return;
-  if(S.reqs.some(function(r){return r.employeeId===editEmp.id;})){
-    alert("Ο εργαζόμενος έχει αιτήσεις στο αρχείο. Όρισέ τον «Ανενεργό» αντί να τον διαγράψεις."); return;
-  }
-  if(confirm("Διαγραφή του «"+editEmp.name+"»;")){ await del("employees",editEmp.id); $("#dEmp").close(); }
+$("#fLogin").addEventListener('submit',async function(ev){
+  ev.preventDefault();var b=this.querySelector('button');if(b.disabled)return;b.disabled=true;$("#setupErr").textContent='';
+  try{await api('/api/login',{role:$("#loginRole").value,password:$("#loginPassword").value});$("#loginPassword").value='';await refresh();}
+  catch(e){$("#setupErr").textContent=e.message;}finally{b.disabled=false;}
 });
-
-/* ρυθμίσεις */
-$("#bSaveSet").addEventListener("click",async function(){
-  S.cfg.company=$("#sCo").value.trim()||DEFAULTS.company;
-  S.cfg.unit=$("#sUnit").value.trim();
-  S.cfg.supervisor=$("#sSup").value.trim();
-  S.cfg.md=$("#sMd").value.trim();
-  S.cfg.week=+$("#sWeek").value||6;
-  await saveCfg();
-  this.textContent="Αποθηκεύτηκε"; var b=this;
-  setTimeout(function(){b.textContent="Αποθήκευση";},1600);
-});
-
-/* εξαγωγή */
-$("#bExport").addEventListener("click",function(){
-  var head=["Ημερομηνία","Πρωτόκολλο","Εργαζόμενος","Ενέργεια","Από","Λεπτομέρειες"];
-  var lines=[head.join(";")].concat(S.log.slice().sort(function(a,b){return b.ts-a.ts;}).map(function(v){
-    return [grt(v.ts),v.protocol,v.person,v.action,v.who,v.detail]
-      .map(function(x){return '"'+String(x==null?"":x).replace(/"/g,'""')+'"';}).join(";");
-  }));
-  var txt="﻿"+lines.join("\r\n");
-  var blob=new Blob([txt],{type:"text/csv;charset=utf-8"});
-  var a=document.createElement("a");
-  a.href=URL.createObjectURL(blob); a.download="arxeio-adeion.csv";
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){URL.revokeObjectURL(a.href); a.remove();},500);
-});
-
-
-$("#bConnect").addEventListener("click",function(){
-  var site=$("#cSite").value.trim().replace(/\/+$/,"");
-  var tenant=$("#cTenant").value.trim(), client=$("#cClient").value.trim();
-  if(!site||!tenant||!client){ $("#setupErr").innerHTML='<div class="note">Συμπλήρωσε και τα τρία πεδία.</div>'; return; }
-  CONF={site:site,tenant:tenant,client:client}; lsSet("sp",CONF);
-  $("#setupErr").innerHTML=""; boot();
-});
-$("#bForget").addEventListener("click",function(){
-  try{localStorage.removeItem("adeies:sp");}catch(e){}
-  CONF=null; $("#cSite").value=$("#cTenant").value=$("#cClient").value="";
-  $("#setupErr").innerHTML='<div class="note">Τα στοιχεία διαγράφηκαν από αυτόν τον υπολογιστή.</div>';
-});
-
+$("#bLogout").addEventListener('click',function(){perform(async function(){await api('/api/logout',{});showLogin();});});
+$("#bRefresh").addEventListener('click',function(){perform(refresh);});
 boot();
+
 })();
+
 </script>
 </body>
 </html>
