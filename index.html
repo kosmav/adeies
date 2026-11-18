@@ -410,8 +410,8 @@ if(typeof msal==="undefined"){
         </div>
         <p class="hint" id="rBalance"></p><div class="calc" id="rCalc" hidden><b id="rCalcN">0</b><span id="rCalcT"></span></div>
         <div class="g2 grid">
-          <div class="f"><label for="rPaper">Ημ/νία γραπτής αίτησης</label><input type="date" id="rPaper">
-            <span class="hint">Το χαρτί που κατέθεσε ο εργαζόμενος.</span></div>
+          <div class="f"><label for="rPaper">Ημ/νία γραπτής αίτησης</label><input type="date" id="rPaper" required>
+            <span class="hint" id="rPaperHint">Το χαρτί που κατέθεσε ο εργαζόμενος.</span></div>
           <div class="f"><label for="rCert">Δικαιολογητικό</label><input id="rCert" placeholder="π.χ. ιατρική βεβαίωση αρ. 4471">
             <span class="hint">Προαιρετικό — για αναρρωτική ή σχολική.</span></div>
         </div>
@@ -622,6 +622,7 @@ class UserError extends Error { constructor(message,status=400) { super(message)
 const assert=(ok,msg,status)=>{if(!ok)throw new UserError(msg,status);};
 const clean=(v,max=2000)=>{assert(typeof v==='string'&&v.length<=max,'Μη έγκυρο κείμενο.');return v.trim();};
 const num=v=>{assert(typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=366&&v*2===Math.floor(v*2),'Οι ημέρες πρέπει να είναι από 0 έως 366, ανά μισή ημέρα.');return v;};
+function today() { return new Intl.DateTimeFormat('en-CA',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Europe/Athens'}).format(new Date()); }
 function currentYear() { return Number(new Intl.DateTimeFormat('en',{year:'numeric',timeZone:'Europe/Athens'}).format(new Date())); }
 function date(v,optional=false) { if(optional&&!v)return ''; assert(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&!isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v,'Μη έγκυρη ημερομηνία.'); return v; }
 function usedDays(e,requests,type='kanoniki',year=currentYear()) {
@@ -668,7 +669,7 @@ class Service {
       assert(['kanoniki','sxoliki','anarrotiki','aneu'].includes(d.type),'Μη έγκυρο είδος άδειας.');
       if(d.type==='sxoliki') assert(e.schoolEntitlement>0,'Ο εργαζόμενος δεν έχει καταχωρημένο δικαίωμα σχολικής άδειας.');
       const id=randomUUID();
-      const r={id,protocol:'ΑΔ-'+currentYear()+'-'+id.slice(0,8).toUpperCase(),employeeId:e.id,employeeName:e.name,site:e.site,type:d.type,from,to,days,paperDate:date(d.paperDate,true),cert:clean(d.cert||'',500),reason:clean(d.reason||''),status:me?'pending_md':'pending_sup',createdAt:Date.now(),createdBy:who,deleted:false,deletion:null,events:[]};
+      const r={id,protocol:'ΑΔ-'+currentYear()+'-'+id.slice(0,8).toUpperCase(),employeeId:e.id,employeeName:e.name,site:e.site,type:d.type,from,to,days,paperDate:me?today():(date(d.paperDate,true)||today()),cert:clean(d.cert||'',500),reason:clean(d.reason||''),status:me?'pending_md':'pending_sup',createdAt:Date.now(),createdBy:who,deleted:false,deletion:null,events:[]};
       if(me&&!self) r.sup={ok:true,at:Date.now(),by:me.name,note:'Κατάθεση από τον υπεύθυνο'};
       audit(r,who,me?(self?'Υποβολή αίτησης από τον εργαζόμενο':'Κατάθεση αίτησης από υπεύθυνο'):'Καταχώρηση αίτησης',r.days+' ημ.'); await this.store.save('requests',r);
     } else if (['request.decide','deletion.request','deletion.approve','deletion.reject','deletion.direct','request.print'].includes(action)) {
@@ -726,7 +727,7 @@ class Service {
   }); }
 }
 
-return {Service,currentYear,usedDays};})();
+return {Service,currentYear,usedDays,today};})();
 
 function entitlement(e,type){return +(type==="sxoliki"?e.schoolEntitlement:e.entitlement)||0;}
 function usedDays(id,type,year){
@@ -1162,6 +1163,8 @@ function recalc(){
 $("#bNew").addEventListener('click',function(){
   $("#fReq").reset();fillEmpSelect();if(!$("#rEmp").value){alert('Πρόσθεσε πρώτα έναν ενεργό εργαζόμενο.');return;}
   $("#fReq button[type=submit]").textContent=role==="emp"?"Υποβολή για τελική έγκριση":"Καταχώρηση & αποστολή στον προϊστάμενο";
+  $("#rPaper").value=Domain.today();$("#rPaper").readOnly=role==="emp";
+  $("#rPaperHint").textContent=role==="emp"?"Συμπληρώνεται αυτόματα με τη σημερινή ημερομηνία.":"Προσυμπληρώνεται με τη σημερινή· άλλαξέ τη αν το χαρτί κατατέθηκε άλλη ημέρα.";
   $("#rCalc").hidden=true;showBalance();$("#dReq").showModal();
 });
 ['#rEmp','#rFrom','#rTo'].forEach(function(s){$(s).addEventListener('change',recalc);});
