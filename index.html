@@ -483,6 +483,7 @@ if(typeof msal==="undefined"){
 <div id="setup"><div class="setup-card">
   <h2>Άδειες Προσωπικού</h2><div id="setupErr" class="note" role="alert"></div>
   <p class="hint" id="whoAmI"></p>
+  <div id="migrateBox" hidden style="margin-bottom:18px"><p class="lead">Η νέα τοποθεσία SharePoint είναι άδεια. Μετάφερε εργαζομένους, αιτήσεις, αρχείο και κωδικούς ρόλων από την παλιά. Γίνεται μία φορά, από τον Διευθύνοντα Σύμβουλο.</p><button class="btn pri" type="button" id="bMigrate">Μεταφορά δεδομένων</button></div>
   <div id="empLogin" hidden style="margin-bottom:18px"><p class="lead">Προσωπική πρόσβαση: υποβολή και παρακολούθηση των αιτήσεών σου.</p><button class="btn pri" type="button" id="bEmpLogin">Είσοδος</button></div>
   <form id="fLogin" hidden><p class="lead">Επίλεξε τον ρόλο σου και συμπλήρωσε τον αντίστοιχο κωδικό.</p><div class="grid">
     <div class="f"><label for="loginRole">Ρόλος</label><select id="loginRole" autocomplete="username"><option value="sec">Γραμματεία</option><option value="sup">Προϊστάμενος</option><option value="md">Διευθύνων Σύμβουλος</option></select></div>
@@ -765,7 +766,9 @@ var APP=null,account=null,siteId=null,listIds={},sessionRole=null,sessionEmp=nul
 function myMail(){return String(account&&account.username||'').trim().toLowerCase();}
 function ctx(){return sessionRole==='emp'?{empId:sessionEmp,email:myMail()}:null;}
 async function findMe(){var mail=myMail();return mail?(await store.all('employees')).find(function(e){return e.active!==0&&e.email===mail;})||null:null;}
-var CONF=lsGet('sp',{site:'https://foodwealth.sharepoint.com',tenant:'b461df21-9afc-4b67-b1df-403ef5490e44',client:'1dfc5d63-f3db-4882-bfeb-e592f8d28c2d'}),SCOPES=['https://graph.microsoft.com/Sites.Manage.All'];
+var OLD_SITE='https://foodwealth.sharepoint.com';
+// Νέο κλειδί αποθήκευσης: η νέα τοποθεσία ισχύει και σε υπολογιστές που είχαν αποθηκεύσει την παλιά.
+var CONF=lsGet('sp2',{site:'https://foodwealth.sharepoint.com/sites/adeies',tenant:'b461df21-9afc-4b67-b1df-403ef5490e44',client:'1dfc5d63-f3db-4882-bfeb-e592f8d28c2d'}),SCOPES=['https://graph.microsoft.com/Sites.Manage.All'];
 var codeAttempts=0,codeBlockedUntil=0;
 async function token(){
   try{return (await APP.acquireTokenSilent({scopes:SCOPES,account:account})).accessToken;}
@@ -775,6 +778,7 @@ async function graph(path,method,body,etag){
   var url=new URL(path.startsWith('https:')?path:'https://graph.microsoft.com/v1.0'+path);
   if(url.origin!=='https://graph.microsoft.com'||!url.pathname.startsWith('/v1.0/sites/'))throw new Error('Μη επιτρεπτή διεύθυνση SharePoint.');
   var response=await fetch(url,{method:method||'GET',headers:{Authorization:'Bearer '+await token(),'Content-Type':'application/json',...(etag?{'If-Match':etag}:{})},body:body===undefined?undefined:JSON.stringify(body)});
+  if(response.status===403)throw new Error('Ο λογαριασμός σου δεν έχει πρόσβαση στον χώρο SharePoint των αδειών. Ενημέρωσε τον Διευθύνοντα Σύμβουλο.');
   if(response.status===412)throw new Error('Η εγγραφή άλλαξε από άλλον χρήστη. Πάτησε Ανανέωση πριν συνεχίσεις.');
   if(!response.ok)throw new Error('Το SharePoint επέστρεψε σφάλμα '+response.status+'. Η αποθήκευση δεν επιβεβαιώθηκε. Ανανέωσε πριν ξαναδοκιμάσεις.');
   return response.status===204?null:response.json();
@@ -808,6 +812,33 @@ async function ensureLists(){
   }
 }
 async function getConfig(){return (await store.all('config'))[0];}
+// Μία φορά: αντιγραφή όλων των δεδομένων από την παλιά τοποθεσία σε νέα, μη ρυθμισμένη τοποθεσία.
+async function migrate(progress){
+  var cfg=await getConfig();
+  if(cfg&&cfg.roleCodes&&cfg.roleCodes.md)throw new Error('Η τοποθεσία έχει ήδη ρυθμιστεί. Η μεταφορά δεν επαναλαμβάνεται.');
+  var u=new URL(OLD_SITE),old=await graph('/sites/'+u.hostname+':'+(u.pathname.replace(/\/+$/,'')||'/'));
+  if(old.id===siteId)throw new Error('Η παλιά και η νέα τοποθεσία είναι η ίδια.');
+  var base='/sites/'+encodeURIComponent(old.id)+'/lists',have=await pages(base+'?$select=id,name,displayName'),data={},kinds=['employees','requests','log','config'];
+  for(var kind of kinds){
+    var def=ShareSchema.schema[kind],list=have.find(function(x){return x.name===def.name||x.displayName===def.name;});
+    if(!list)throw new Error('Δεν βρέθηκε η λίστα '+def.name+' στην παλιά τοποθεσία.');
+    data[kind]=(await pages(base+'/'+list.id+'/items?$expand=fields&$top=500')).map(function(item){return ShareSchema.decode(kind,item);}).filter(function(o){return o.id;});
+  }
+  var done={};
+  for(var k of ['employees','requests','log']){
+    var existing=new Set((await pages(store.path(k)+'?$expand=fields&$top=500')).map(function(i){return (i.fields||{}).Key;})),n=0;
+    for(var rec of data[k]){
+      n++;if(existing.has(rec.id))continue;
+      var copy=Object.assign({},rec);delete copy._gid;delete copy._etag;
+      await store.save(k,copy);if(progress)progress(k,n,data[k].length);
+    }
+    done[k]=data[k].length;
+  }
+  var oc=data.config[0];
+  if(!oc||!oc.roleCodes||!oc.roleCodes.md)throw new Error('Η παλιά τοποθεσία δεν έχει ρυθμισμένους κωδικούς. Τα δεδομένα αντιγράφηκαν· όρισε κωδικούς με την «Πρώτη ρύθμιση κωδικών».');
+  await store.save('config',Object.assign({},cfg,{company:oc.company,unit:oc.unit,supervisor:oc.supervisor,md:oc.md,week:oc.week,roleCodes:oc.roleCodes,carryBaselineYear:oc.carryBaselineYear}));
+  return done;
+}
 async function deriveCode(code,salt){
   var key=await crypto.subtle.importKey('raw',new TextEncoder().encode(code),'PBKDF2',false,['deriveBits']);
   var bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new Uint8Array(salt),iterations:210000,hash:'SHA-256'},key,256);
@@ -877,7 +908,8 @@ async function boot(){
     $('#whoAmI').textContent=myMail()?'Λογαριασμός Microsoft: '+myMail():'';
     var mine=cfg.roleCodes?.md?await findMe():null;
     $('#empLogin').hidden=!mine;if(mine)$('#bEmpLogin').textContent='Είσοδος ως '+mine.name;
-    if(!cfg.roleCodes?.md)await openCodes(true);
+    var canMigrate=!cfg.roleCodes?.md&&CONF.site!==OLD_SITE;$('#migrateBox').hidden=!canMigrate;
+    if(!cfg.roleCodes?.md&&!canMigrate)await openCodes(true);
   }catch(e){$('#setupErr').textContent=e.message;$('#spForm').hidden=false;}
 }
 $('#bConnect').addEventListener('click',function(){
@@ -886,7 +918,7 @@ $('#bConnect').addEventListener('click',function(){
     if(site.protocol!=='https:'||!site.hostname.endsWith('.sharepoint.com'))throw new Error('Συμπλήρωσε τη διεύθυνση https του εταιρικού SharePoint.');
     var tenant=$('#cTenant').value.trim(),client=$('#cClient').value.trim(),guid=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
     if(!guid.test(tenant)||!guid.test(client))throw new Error('Τα Tenant ID και Client ID πρέπει να είναι έγκυρα αναγνωριστικά Microsoft.');
-    CONF={site:site.href.replace(/\/$/,''),tenant:tenant,client:client};lsSet('sp',CONF);boot();
+    CONF={site:site.href.replace(/\/$/,''),tenant:tenant,client:client};lsSet('sp2',CONF);boot();
   }catch(e){$('#setupErr').textContent=e.message;}
 });
 $('#bCodes').addEventListener('click',function(){if(role==='md')openCodes(false);});
@@ -1197,6 +1229,17 @@ $("#fLogin").addEventListener('submit',async function(ev){
   ev.preventDefault();var b=this.querySelector('button');if(b.disabled)return;b.disabled=true;$("#setupErr").textContent='';
   try{await api('/api/login',{role:$("#loginRole").value,password:$("#loginPassword").value});$("#loginPassword").value='';await refresh();}
   catch(e){$("#setupErr").textContent=e.message;}finally{b.disabled=false;}
+});
+$("#bMigrate").addEventListener('click',async function(){
+  var b=this;if(b.disabled)return;b.disabled=true;
+  var names={employees:'εργαζόμενοι',requests:'αιτήσεις',log:'κινήσεις'};
+  try{
+    $("#setupErr").textContent='Γίνεται μεταφορά… μην κλείσεις τη σελίδα.';
+    var done=await migrate(function(k,n,total){$("#setupErr").textContent='Γίνεται μεταφορά — '+names[k]+': '+n+' από '+total+'. Μην κλείσεις τη σελίδα.';});
+    await boot();
+    $("#setupErr").textContent='Η μεταφορά ολοκληρώθηκε: '+done.employees+' εργαζόμενοι, '+done.requests+' αιτήσεις, '+done.log+' κινήσεις. Συνδέσου με τους κωδικούς που είχες.';
+  }catch(e){$("#setupErr").textContent=e.message+' Μπορείς να ξαναπατήσεις «Μεταφορά δεδομένων»· ό,τι έχει ήδη αντιγραφεί δεν διπλασιάζεται.';}
+  finally{b.disabled=false;}
 });
 $("#bEmpLogin").addEventListener('click',async function(){
   var b=this;if(b.disabled)return;b.disabled=true;$("#setupErr").textContent='';
