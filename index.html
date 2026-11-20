@@ -400,6 +400,7 @@ if(typeof msal==="undefined"){
               <option value="anarrotiki">Αναρρωτική (ασθενείας)</option>
               <option value="sxoliki">Σχολική άδεια</option>
               <option value="aneu">Άδεια άνευ αποδοχών</option>
+              <option value="eidiki">Άδεια για ειδικούς λόγους</option>
             </select></div>
         </div>
         <div class="g3 grid">
@@ -517,7 +518,8 @@ var TYPES={
   kanoniki:{l:"Κανονική άδεια",short:"Κανονική",counts:true},
   anarrotiki:{l:"Αναρρωτική άδεια (ασθενείας)",short:"Αναρρωτική",counts:false},
   sxoliki:{l:"Σχολική άδεια",short:"Σχολική",counts:true},
-  aneu:{l:"Άδεια άνευ αποδοχών",short:"Άνευ αποδοχών",counts:false}
+  aneu:{l:"Άδεια άνευ αποδοχών",short:"Άνευ αποδοχών",counts:false},
+  eidiki:{l:"Άδεια για ειδικούς λόγους",short:"Ειδικοί λόγοι",counts:false}
 };
 var STATUS={
   pending_sup:{l:"Αναμονή προϊσταμένου",c:"sup"},
@@ -667,7 +669,7 @@ class Service {
       const from=date(d.from),to=date(d.to),days=num(d.days);
       assert(to>=from&&to.slice(0,4)===from.slice(0,4),'Οι ημερομηνίες πρέπει να είναι με σωστή σειρά και στο ίδιο έτος. Χώρισε άδεια που περνά στην επόμενη χρονιά.');
       assert(days>0&&days<=(Date.parse(to)-Date.parse(from))/86400000+1,'Συμπλήρωσε έγκυρο αριθμό ημερών για το διάστημα.');
-      assert(['kanoniki','sxoliki','anarrotiki','aneu'].includes(d.type),'Μη έγκυρο είδος άδειας.');
+      assert(['kanoniki','sxoliki','anarrotiki','aneu','eidiki'].includes(d.type),'Μη έγκυρο είδος άδειας.');
       if(d.type==='sxoliki') assert(e.schoolEntitlement>0,'Ο εργαζόμενος δεν έχει καταχωρημένο δικαίωμα σχολικής άδειας.');
       const id=randomUUID();
       const r={id,protocol:'ΑΔ-'+currentYear()+'-'+id.slice(0,8).toUpperCase(),employeeId:e.id,employeeName:e.name,site:e.site,type:d.type,from,to,days,paperDate:me?today():(date(d.paperDate,true)||today()),cert:clean(d.cert||'',500),reason:clean(d.reason||''),status:me?'pending_md':'pending_sup',createdAt:Date.now(),createdBy:who,deleted:false,deletion:null,events:[]};
